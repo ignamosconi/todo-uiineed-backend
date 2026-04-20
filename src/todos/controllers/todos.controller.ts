@@ -47,4 +47,11 @@ export class TodosController {
   async deleteAll(@Param('url') url: string) {
     return this.todosService.clearAll(url);
   }
+
+  /*
+  TODOS (ha, get it?)
+  revisar clear completed. Si NO tenés endpoint, decime y te hago versión iterando PATCH.
+    1. BACK: Añadir clear-completed (pasar de completed a eliminated)
+    2. BACK: añadir forma de actualizar nombres de tareas (el front lo hace con doble click).
+  */
 }
