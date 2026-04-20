@@ -1,10 +1,11 @@
-import { Todo } from '../entities/todo.entity';
+import { SuccessResponseDto } from '../dto/success-response.dto';
+import { TodoResponseDto } from '../dto/todo-response.dto';
+import { TodoStatus } from '../enums/todo-status.enum';
 
 export interface ITodosService {
-  create(url: string, name: string): Promise<Todo>;
-  findByStatus(url: string, status: string): Promise<Todo[]>;
-  changeStatus(id: number, status: string): Promise<{ success: boolean }>;
-  completeAll(url: string): Promise<{ success: boolean }>;
-  clearAll(url: string): Promise<{ success: boolean }>;
+  create(url: string, name: string): Promise<TodoResponseDto>;
+  findByStatus(url: string, status: TodoStatus): Promise<TodoResponseDto[]>;
+  changeStatus(url: string, id: number, status: TodoStatus): Promise<SuccessResponseDto>;
+  completeAll(url: string): Promise<SuccessResponseDto>;
+  clearAll(url: string): Promise<SuccessResponseDto>;
 }
-
