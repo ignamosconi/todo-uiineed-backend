@@ -8,7 +8,8 @@ Su objetivo es permitir que los usuarios creen listas de tareas que puedan ser c
 Cualquier persona con ese link puede acceder a la lista desde cualquier dispositivo, sin necesidad de loguearse.
 
 El frontend que consume esta API es el siguiente:  
-→ (COMPLETAR CUANDO HAGA FRONT)
+<br/>
+→ https://github.com/ignamosconi/todo-uiineed-frontend/
 
 ---
 
