@@ -1,40 +1,50 @@
-import { Controller, Post, Get, Patch, Body, Param, Query, Inject } from '@nestjs/common';
-import type { ITodosService } from '../services/todos.service.interface';
+import {Controller, Post, Get, Patch, Body, Param, Query, Inject, ParseIntPipe, } from '@nestjs/common';
+import { CreateTodoDto } from '../dto/create-todo.dto';
+import { UpdateTodoStatusDto } from '../dto/update-todo-status.dto';
+import { TodoStatus } from '../enums/todo-status.enum';
 
-@Controller('todos/:url') // El ":url" permite capturar el código único de la lista
+import type { ITodosService } from '../services/todos.service.interface';
+import { TrimNamePipe } from '../pipes/trim-name.pipe';
+import { TodoStatusPipe } from '../pipes/todo-status.pipe';
+
+@Controller('todos/:url')
 export class TodosController {
   constructor(
     @Inject('ITodosService') private readonly todosService: ITodosService,
   ) {}
 
-  // Crear nueva tarea
   @Post()
-  async add(@Param('url') url: string, @Body('name') name: string) {
-    return await this.todosService.create(url, name);
+  async add(
+    @Param('url') url: string,
+    @Body(new TrimNamePipe()) dto: CreateTodoDto,
+  ) {
+    return this.todosService.create(url, dto.name);
   }
 
-  // Consultar tareas por estado (created, completed, eliminated)
-  // Ejemplo: GET /todos/abc-123?status=completed
   @Get()
-  async get(@Param('url') url: string, @Query('status') status: string) {
-    return await this.todosService.findByStatus(url, status || 'created');
+  async get(
+    @Param('url') url: string,
+    @Query('status', TodoStatusPipe) status: TodoStatus,
+  ) {
+    return this.todosService.findByStatus(url, status);
   }
 
-  //Cambiar estado de una tarea puntual
   @Patch(':id/status')
-  async update(@Param('id') id: number, @Body('status') status: string) {
-    return await this.todosService.changeStatus(id, status);
+  async update(
+    @Param('url') url: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTodoStatusDto,
+  ) {
+    return this.todosService.changeStatus(url, id, dto.status);
   }
 
-  // 7. Marcar todas las "created" como "completed"
   @Post('complete-all')
   async allDone(@Param('url') url: string) {
-    return await this.todosService.completeAll(url);
+    return this.todosService.completeAll(url);
   }
 
-  // 8. "Eliminar" todas (pasar a estado eliminated)
   @Post('clear-all')
   async deleteAll(@Param('url') url: string) {
-    return await this.todosService.clearAll(url);
+    return this.todosService.clearAll(url);
   }
 }

@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { List } from '../../lists/entities/list.entity';
+import { TodoStatus } from '../enums/todo-status.enum';
 
 @Entity('todos')
 export class Todo {
@@ -9,8 +10,12 @@ export class Todo {
   @Column()
   name!: string;
 
-  @Column({ default: 'created' }) // 'created', 'completed', 'eliminated'
-  status!: string;
+  @Column({
+    type: 'enum',
+    enum: TodoStatus,
+    default: TodoStatus.CREATED,
+  })
+  status!: TodoStatus;
 
   @ManyToOne(() => List, (list) => list.todos)
   list!: List;

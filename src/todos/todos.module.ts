@@ -10,7 +10,7 @@ import { ListsModule } from '../lists/lists.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Todo, List]),
-    ListsModule, // Necesario para acceder al ListsRepository si hiciera falta
+    ListsModule,
   ],
   controllers: [TodosController],
   providers: [
