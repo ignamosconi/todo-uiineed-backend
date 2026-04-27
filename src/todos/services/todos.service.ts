@@ -1,21 +1,20 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { ITodosService } from './todos.service.interface';
 import type { ITodosRepository } from '../repositories/todos.repository.interface';
-import type{ IListsRepository } from '../../lists/repositories/lists.repository.interface';
 import { TodoResponseDto } from '../dto/todo-response.dto';
 import { SuccessResponseDto } from '../dto/success-response.dto';
 import { TodoStatus } from '../enums/todo-status.enum';
+import { EnsureListHelper } from '../helpers/ensure-list.helper';
 
 @Injectable()
 export class TodosService implements ITodosService {
   constructor(
     @Inject('ITodosRepository') private readonly todoRepo: ITodosRepository,
-    @Inject('IListsRepository') private readonly listRepo: IListsRepository,
+    private readonly ensureList: EnsureListHelper,
   ) {}
 
   async create(url: string, name: string): Promise<TodoResponseDto> {
-    const list = await this.listRepo.findByUrl(url);
-    if (!list) throw new NotFoundException('Lista no encontrada');
+    const list = await this.ensureList.execute(url);
 
     const todo = await this.todoRepo.save(name, list);
 
@@ -26,14 +25,29 @@ export class TodosService implements ITodosService {
     };
   }
 
-  async findByStatus(url: string, status: TodoStatus): Promise<TodoResponseDto[]> {
-    const list = await this.listRepo.findByUrl(url);
+  //Encontramos los todos que no están en la trash todavía
+  async findActiveByStatus(url: string, status: TodoStatus): Promise<TodoResponseDto[]> {
+    const list = await this.ensureList.execute(url);
 
-    if (!list) {
-      throw new NotFoundException('Lista no encontrada');
-    }
+    const todos = await this.todoRepo.findAllByList(list.id, {
+      status,
+      isEliminated: false,
+    });
 
-    const todos = await this.todoRepo.findStatusByUrl(url, status);
+    return todos.map(todo => ({
+      id: todo.id,
+      name: todo.name,
+      status: todo.status,
+    }));
+  }
+
+  //Encontramos los todos en trash
+  async findTrash(url: string): Promise<TodoResponseDto[]> {
+    const list = await this.ensureList.execute(url);
+
+    const todos = await this.todoRepo.findAllByList(list.id, {
+      isEliminated: true,
+    });
 
     return todos.map(todo => ({
       id: todo.id,
@@ -43,25 +57,74 @@ export class TodosService implements ITodosService {
   }
 
   async changeStatus(url: string, id: number, status: TodoStatus): Promise<SuccessResponseDto> {
-    const todo = await this.todoRepo.findByIdAndListUrl(id, url);
+    await this.ensureList.execute(url);
+
+    const todo = await this.todoRepo.findById(id);
 
     if (!todo) {
-      throw new NotFoundException('Todo no encontrado en esta lista');
+      throw new NotFoundException('Todo no encontrado');
     }
 
     await this.todoRepo.updateStatus(id, status);
 
-    const response: SuccessResponseDto = {success: true};
-    return response;
+    return { success: true };
   }
 
   async completeAll(url: string): Promise<SuccessResponseDto> {
-    await this.todoRepo.updateManyStatus(url, TodoStatus.CREATED, TodoStatus.COMPLETED);
+    const list = await this.ensureList.execute(url);
+
+    await this.todoRepo.updateMany(
+      list.id,
+      { status: TodoStatus.COMPLETED },
+      { status: TodoStatus.CREATED, isEliminated: false },
+    );
+
+    return { success: true };
+  }
+
+  async clearCompleted(url: string): Promise<SuccessResponseDto> {
+    const list = await this.ensureList.execute(url);
+
+    await this.todoRepo.updateMany(
+      list.id,
+      { isEliminated: true },
+      { status: TodoStatus.COMPLETED, isEliminated: false },
+    );
+
     return { success: true };
   }
 
   async clearAll(url: string): Promise<SuccessResponseDto> {
-    await this.todoRepo.updateManyStatus(url, null, TodoStatus.ELIMINATED);
+    const list = await this.ensureList.execute(url);
+
+    await this.todoRepo.updateMany(
+      list.id,
+      { isEliminated: true },
+      { isEliminated: false },
+    );
+
+    return { success: true };
+  }
+
+  async clearTrash(url: string): Promise<SuccessResponseDto> {
+    const list = await this.ensureList.execute(url);
+
+    await this.todoRepo.deleteMany(list.id, {
+      isEliminated: true,
+    });
+
+    return { success: true };
+  }
+
+  async restoreTrash(url: string): Promise<SuccessResponseDto> {
+    const list = await this.ensureList.execute(url);
+
+    await this.todoRepo.updateMany(
+      list.id,
+      { isEliminated: false },
+      { isEliminated: true },
+    );
+
     return { success: true };
   }
 }

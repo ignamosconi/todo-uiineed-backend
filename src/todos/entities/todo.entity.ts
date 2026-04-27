@@ -17,6 +17,11 @@ export class Todo {
   })
   status!: TodoStatus;
 
+  //El front permite que las tareas eliminadas tengan estado (created / completed), entonces
+  //eliminated no es un estado del enum, tiene que ir aparte.
+  @Column({ default: false })
+  isEliminated!: boolean;
+
   @ManyToOne(() => List, (list) => list.todos)
   list!: List;
 }

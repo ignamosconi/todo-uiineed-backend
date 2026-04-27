@@ -3,19 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Todo } from '../entities/todo.entity';
 import { List } from '../../lists/entities/list.entity';
-import { ITodosRepository } from './todos.repository.interface';
 import { TodoStatus } from '../enums/todo-status.enum';
 
-
 @Injectable()
-export class TodosRepository implements ITodosRepository {
+export class TodosRepository {
   constructor(
     @InjectRepository(Todo)
     private readonly ormRepo: Repository<Todo>,
-    @InjectRepository(List)
-    private readonly listRepo: Repository<List>,
   ) {}
 
+  /*
+    SAVE
+  */
   async save(name: string, list: List): Promise<Todo> {
     return this.ormRepo.save({
       name,
@@ -24,57 +23,85 @@ export class TodosRepository implements ITodosRepository {
     });
   }
 
-  async findStatusByUrl(url: string, status: TodoStatus): Promise<Todo[]> {
-    return this.ormRepo.find({
-      relations: ['list'],
-      where: {
-        status,
-        list: {
-          url,
-        },
-      },
-    });
-  }
-
-  async updateStatus(id: number, status: TodoStatus): Promise<void> {
-    await this.ormRepo.update(id, { status });
-  }
-
+  /*
+    FINDs
+  */
   async findById(id: number): Promise<Todo | null> {
-    return this.ormRepo.findOne({ where: { id } });
+    return this.ormRepo
+      .createQueryBuilder('todo')
+      .where('todo.id = :id', { id })
+      .getOne();
   }
 
-  async findByIdAndListUrl(id: number, url: string): Promise<Todo | null> {
-    return this.ormRepo.findOne({
-      relations: ['list'],
-      where: {
-        id,
-        list: {
-          url,
-        },
-      },
-    });
-  }
+  async findAllByList(
+    listId: number,
+    filters?: { status?: TodoStatus; isEliminated?: boolean },
+  ): Promise<Todo[]> {
+    const qb = this.ormRepo
+      .createQueryBuilder('todo')
+      .where('todo.listId = :listId', { listId });
 
-  async updateManyStatus(
-    url: string,
-    oldStatus: TodoStatus | null,
-    newStatus: TodoStatus,
-  ): Promise<void> {
-    const list = await this.listRepo.findOne({ where: { url } });
-
-    if (!list) return;
-
-    const where: any = {
-      list: { id: list.id },
-    };
-
-    if (oldStatus !== null) {
-      where.status = oldStatus;
+    if (filters?.status !== undefined) {
+      qb.andWhere('todo.status = :status', { status: filters.status });
     }
 
-    await this.ormRepo.update(where, {
-      status: newStatus,
-    });
+    if (filters?.isEliminated !== undefined) {
+      qb.andWhere('todo.isEliminated = :isEliminated', {
+        isEliminated: filters.isEliminated,
+      });
+    }
+
+    return qb.getMany();
+  }
+
+  /*
+    UPDATEs
+  */
+  async updateStatus(id: number, status: TodoStatus): Promise<void> {
+    await this.ormRepo
+      .createQueryBuilder()
+      .update(Todo)
+      .set({ status })
+      .where('id = :id', { id })
+      .execute();
+  }
+
+  async updateMany(
+    listId: number,
+    patch: Partial<Todo>,
+    filters?: { status?: TodoStatus; isEliminated?: boolean },
+  ): Promise<void> {
+    const qb = this.ormRepo
+      .createQueryBuilder()
+      .update(Todo)
+      .set(patch)
+      .where('listId = :listId', { listId });
+
+    if (filters?.status !== undefined) {
+      qb.andWhere('status = :status', { status: filters.status });
+    }
+
+    if (filters?.isEliminated !== undefined) {
+      qb.andWhere('isEliminated = :isEliminated', {
+        isEliminated: filters.isEliminated,
+      });
+    }
+
+    await qb.execute();
+  }
+
+  /*
+    DELETE trash
+  */
+  async deleteMany(
+    listId: number,
+  ): Promise<void> {
+    await this.ormRepo
+      .createQueryBuilder()
+      .delete()
+      .from(Todo)
+      .where('listId = :listId', { listId })
+      .andWhere('isEliminated = :isEliminated', { isEliminated: true })
+      .execute();
   }
 }

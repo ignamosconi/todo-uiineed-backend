@@ -6,6 +6,7 @@ import { TodosController } from './controllers/todos.controller';
 import { TodosService } from './services/todos.service';
 import { TodosRepository } from './repositories/todos.repository';
 import { ListsModule } from '../lists/lists.module';
+import { EnsureListHelper } from './helpers/ensure-list.helper';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ListsModule } from '../lists/lists.module';
   ],
   controllers: [TodosController],
   providers: [
+    EnsureListHelper,
     {
       provide: 'ITodosRepository',
       useClass: TodosRepository,
@@ -22,6 +24,7 @@ import { ListsModule } from '../lists/lists.module';
       provide: 'ITodosService',
       useClass: TodosService,
     },
+    
   ],
 })
 export class TodosModule {}
