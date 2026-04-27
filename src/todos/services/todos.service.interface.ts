@@ -9,6 +9,7 @@ export interface ITodosService {
   findActiveByStatus(url: string, status: TodoStatus): Promise<TodoResponseDto[]>;
 
   changeStatus(url: string, id: number, status: TodoStatus): Promise<SuccessResponseDto>;
+  changeName(url: string, id:number, name: string): Promise<SuccessResponseDto>;
   
   completeAll(url: string): Promise<SuccessResponseDto>;
   clearCompleted(url: string): Promise<SuccessResponseDto>;

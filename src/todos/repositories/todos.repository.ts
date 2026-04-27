@@ -54,15 +54,43 @@ export class TodosRepository {
     return qb.getMany();
   }
 
+  //Nos aseguramos que el todo que quieren consultar sea de la lista en la que están trabajando.
+  async findByIdAndList(id: number, listId: number): Promise<Todo | null> {
+    return this.ormRepo
+      .createQueryBuilder('todo')
+      .where('todo.id = :id', { id })
+      .andWhere('todo.listId = :listId', { listId })
+      .getOne();
+  }
+
   /*
     UPDATEs
   */
-  async updateStatus(id: number, status: TodoStatus): Promise<void> {
+  async updateStatus(
+    id: number,
+    listId: number,
+    status: TodoStatus,
+  ): Promise<void> {
     await this.ormRepo
       .createQueryBuilder()
       .update(Todo)
       .set({ status })
       .where('id = :id', { id })
+      .andWhere('listId = :listId', { listId })
+      .execute();
+  }
+
+  async updateName(
+    id: number,
+    listId: number,
+    name: string,
+  ): Promise<void> {
+    await this.ormRepo
+      .createQueryBuilder()
+      .update(Todo)
+      .set({ name })
+      .where('id = :id', { id })
+      .andWhere('listId = :listId', { listId })
       .execute();
   }
 
@@ -93,15 +121,13 @@ export class TodosRepository {
   /*
     DELETE trash
   */
-  async deleteMany(
-    listId: number,
-  ): Promise<void> {
+  async deleteMany(listId: number): Promise<void> {
     await this.ormRepo
       .createQueryBuilder()
       .delete()
       .from(Todo)
       .where('listId = :listId', { listId })
-      .andWhere('isEliminated = :isEliminated', { isEliminated: true })
+      .andWhere('isEliminated = true')
       .execute();
   }
 }
