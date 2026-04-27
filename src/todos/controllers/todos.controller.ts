@@ -1,4 +1,4 @@
-import {Controller, Post, Get, Patch, Body, Param, Query, Inject, ParseIntPipe, } from '@nestjs/common';
+import {Controller, Post, Get, Patch, Body, Param, Query, Inject, ParseIntPipe, Delete, } from '@nestjs/common';
 import { CreateTodoDto } from '../dto/create-todo.dto';
 import { UpdateTodoStatusDto } from '../dto/update-todo-status.dto';
 import { TodoStatus } from '../enums/todo-status.enum';
@@ -6,6 +6,7 @@ import { TodoStatus } from '../enums/todo-status.enum';
 import type { ITodosService } from '../services/todos.service.interface';
 import { TrimNamePipe } from '../pipes/trim-name.pipe';
 import { TodoStatusPipe } from '../pipes/todo-status.pipe';
+import { UpdateTodoNameDto } from '../dto/update-todo-name.dto';
 
 @Controller('todos/:url')
 export class TodosController {
@@ -37,7 +38,7 @@ export class TodosController {
   }
 
   @Patch(':id/status')
-  async update(
+  async updateStatus(
     @Param('url') url: string,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateTodoStatusDto,
@@ -45,33 +46,44 @@ export class TodosController {
     return this.todosService.changeStatus(url, id, dto.status);
   }
 
+  @Patch(':id/name')
+  async updateName(
+    @Param('url') url: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTodoNameDto,
+  ) {
+    return this.todosService.changeName(url, id, dto.name);
+  }
+
   //Marcar all todos como completed
-  @Post('complete-all')
+  @Patch('complete-all')
   async allDone(@Param('url') url: string) {
     return this.todosService.completeAll(url);
   }
 
   //Pasar all todos completed a trash
-  @Post('clear-completed')
+  @Patch('clear-completed')
   async clearCompleted(@Param('url') url: string) {
     return this.todosService.clearCompleted(url);
   }
 
   //Pasar all todos created y completed a trash
-  @Post('clear-all')
+  @Patch('clear-all')
   async deleteAll(@Param('url') url: string) {
     return this.todosService.clearAll(url);
   }
 
+  //Se cambia isEliminated por true y la Todo mantiene su estado anterior a ser eliminada.
+  @Patch('restore-trash')
+  async restore(@Param('url') url: string) {
+    return this.todosService.restoreTrash(url);
+  }
+
   //Borrar de la bd todo lo que esté en trash. 
-  @Post('clear-trash')
+  @Delete('clear-trash')
   async clearTrash(@Param('url') url: string) {
     return this.todosService.clearTrash(url);
   }
 
-  //Se cambia isEliminated por true y la Todo mantiene su estado anterior a ser eliminada.
-  @Post('restore-trash')
-  async restore(@Param('url') url: string) {
-    return this.todosService.restoreTrash(url);
-  }
+
 }

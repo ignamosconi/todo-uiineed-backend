@@ -56,19 +56,34 @@ export class TodosService implements ITodosService {
     }));
   }
 
-  async changeStatus(url: string, id: number, status: TodoStatus): Promise<SuccessResponseDto> {
-    await this.ensureList.execute(url);
+  async changeStatus(url: string, id: number, status: TodoStatus) {
+    const list = await this.ensureList.execute(url);
 
-    const todo = await this.todoRepo.findById(id);
+    const todo = await this.todoRepo.findByIdAndList(id, list.id);
 
     if (!todo) {
       throw new NotFoundException('Todo no encontrado');
     }
 
-    await this.todoRepo.updateStatus(id, status);
+    await this.todoRepo.updateStatus(id, list.id, status);
 
     return { success: true };
   }
+
+  async changeName(url: string, id: number, name: string) {
+    const list = await this.ensureList.execute(url);
+
+    const todo = await this.todoRepo.findByIdAndList(id, list.id);
+
+    if (!todo) {
+      throw new NotFoundException('Todo no encontrado');
+    }
+
+    await this.todoRepo.updateName(id, list.id, name);
+
+    return { success: true };
+  }
+
 
   async completeAll(url: string): Promise<SuccessResponseDto> {
     const list = await this.ensureList.execute(url);
@@ -109,9 +124,7 @@ export class TodosService implements ITodosService {
   async clearTrash(url: string): Promise<SuccessResponseDto> {
     const list = await this.ensureList.execute(url);
 
-    await this.todoRepo.deleteMany(list.id, {
-      isEliminated: true,
-    });
+    await this.todoRepo.deleteMany(list.id);
 
     return { success: true };
   }

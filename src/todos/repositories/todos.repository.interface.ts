@@ -6,21 +6,21 @@ import { TodoStatus } from '../enums/todo-status.enum';
 export interface ITodosRepository {
   save(name: string, list: List): Promise<Todo>;
 
-  findById(id: number): Promise<Todo | null>;
+  findByIdAndList(id: number, listId: number): Promise<Todo | null>;
 
   findAllByList(listId: number, filters?: {
     status?: TodoStatus;
     isEliminated?: boolean;
   }): Promise<Todo[]>;
 
-  updateStatus(id: number, status: TodoStatus): Promise<void>;
+  updateStatus(id: number, listId: number, status: TodoStatus): Promise<void>;
+
+  updateName(id: number, listId: number, name: string): Promise<void>;
 
   updateMany(listId: number, patch: Partial<Todo>, filters?: {
     status?: TodoStatus;
     isEliminated?: boolean;
   }): Promise<void>;
 
-  deleteMany(listId: number, filters: {
-    isEliminated: true;
-  }): Promise<void>;
+  deleteMany(listId: number): Promise<void>;
 }
