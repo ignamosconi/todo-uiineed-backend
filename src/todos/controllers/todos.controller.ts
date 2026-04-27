@@ -26,7 +26,7 @@ export class TodosController {
   @Get()
   async getActive(
     @Param('url') url: string,
-    @Query('status', TodoStatusPipe) status: TodoStatus,
+    @Query('status', TodoStatusPipe) status?: TodoStatus,
   ) {
     return this.todosService.findActiveByStatus(url, status);
   }

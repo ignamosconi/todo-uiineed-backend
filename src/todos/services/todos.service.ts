@@ -26,13 +26,16 @@ export class TodosService implements ITodosService {
   }
 
   //Encontramos los todos que no están en la trash todavía
-  async findActiveByStatus(url: string, status: TodoStatus): Promise<TodoResponseDto[]> {
+  async findActiveByStatus(url: string, status?: TodoStatus): Promise<TodoResponseDto[]> {
     const list = await this.ensureList.execute(url);
 
-    const todos = await this.todoRepo.findAllByList(list.id, {
-      status,
-      isEliminated: false,
-    });
+    const filters: any = { isEliminated: false };
+
+    if (status) {
+      filters.status = status;
+    }
+
+    const todos = await this.todoRepo.findAllByList(list.id, filters);
 
     return todos.map(todo => ({
       id: todo.id,
