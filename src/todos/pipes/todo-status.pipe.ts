@@ -3,7 +3,7 @@ import { TodoStatus } from '../enums/todo-status.enum';
 
 export class TodoStatusPipe implements PipeTransform {
   transform(value: any) {
-    if (!value) return TodoStatus.CREATED;
+    if (!value) return undefined;
 
     if (!Object.values(TodoStatus).includes(value)) {
       throw new BadRequestException(
