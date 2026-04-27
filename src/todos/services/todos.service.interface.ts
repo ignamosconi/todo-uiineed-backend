@@ -4,8 +4,17 @@ import { TodoStatus } from '../enums/todo-status.enum';
 
 export interface ITodosService {
   create(url: string, name: string): Promise<TodoResponseDto>;
-  findByStatus(url: string, status: TodoStatus): Promise<TodoResponseDto[]>;
+
+  findTrash(url: string): Promise<TodoResponseDto[]>;
+  findActiveByStatus(url: string, status: TodoStatus): Promise<TodoResponseDto[]>;
+
   changeStatus(url: string, id: number, status: TodoStatus): Promise<SuccessResponseDto>;
+  
   completeAll(url: string): Promise<SuccessResponseDto>;
+  clearCompleted(url: string): Promise<SuccessResponseDto>;
+  
+  clearTrash(url: string): Promise<SuccessResponseDto>;
   clearAll(url: string): Promise<SuccessResponseDto>;
+
+  restoreTrash(url: string): Promise<SuccessResponseDto>;
 }

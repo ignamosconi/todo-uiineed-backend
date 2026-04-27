@@ -21,12 +21,19 @@ export class TodosController {
     return this.todosService.create(url, dto.name);
   }
 
+  //Active: Todos con status CREATED o COMPLETED, con isEliminated! = false
   @Get()
-  async get(
+  async getActive(
     @Param('url') url: string,
     @Query('status', TodoStatusPipe) status: TodoStatus,
   ) {
-    return this.todosService.findByStatus(url, status);
+    return this.todosService.findActiveByStatus(url, status);
+  }
+
+  //Trash = Todos con isEliminated! = true
+  @Get('trash')
+  async getTrash(@Param('url') url: string) {
+    return this.todosService.findTrash(url);
   }
 
   @Patch(':id/status')
@@ -38,20 +45,33 @@ export class TodosController {
     return this.todosService.changeStatus(url, id, dto.status);
   }
 
+  //Marcar all todos como completed
   @Post('complete-all')
   async allDone(@Param('url') url: string) {
     return this.todosService.completeAll(url);
   }
 
+  //Pasar all todos completed a trash
+  @Post('clear-completed')
+  async clearCompleted(@Param('url') url: string) {
+    return this.todosService.clearCompleted(url);
+  }
+
+  //Pasar all todos created y completed a trash
   @Post('clear-all')
   async deleteAll(@Param('url') url: string) {
     return this.todosService.clearAll(url);
   }
 
-  /*
-  TODOS (ha, get it?)
-  revisar clear completed. Si NO tenés endpoint, decime y te hago versión iterando PATCH.
-    1. BACK: Añadir clear-completed (pasar de completed a eliminated)
-    2. BACK: añadir forma de actualizar nombres de tareas (el front lo hace con doble click).
-  */
+  //Borrar de la bd todo lo que esté en trash. 
+  @Post('clear-trash')
+  async clearTrash(@Param('url') url: string) {
+    return this.todosService.clearTrash(url);
+  }
+
+  //Se cambia isEliminated por true y la Todo mantiene su estado anterior a ser eliminada.
+  @Post('restore-trash')
+  async restore(@Param('url') url: string) {
+    return this.todosService.restoreTrash(url);
+  }
 }
