@@ -22,6 +22,7 @@ export class TodosService implements ITodosService {
       id: todo.id,
       name: todo.name,
       status: todo.status,
+      isEliminated: todo.isEliminated,
     };
   }
 
@@ -41,6 +42,7 @@ export class TodosService implements ITodosService {
       id: todo.id,
       name: todo.name,
       status: todo.status,
+      isEliminated: todo.isEliminated,
     }));
   }
 
@@ -56,6 +58,7 @@ export class TodosService implements ITodosService {
       id: todo.id,
       name: todo.name,
       status: todo.status,
+      isEliminated: todo.isEliminated,
     }));
   }
 

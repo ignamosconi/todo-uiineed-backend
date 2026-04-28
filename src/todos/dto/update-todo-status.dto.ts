@@ -4,4 +4,5 @@ import { TodoStatus } from '../enums/todo-status.enum';
 export class UpdateTodoStatusDto {
   @IsEnum(TodoStatus)
   status!: TodoStatus;
+  isEliminated!: boolean;
 }

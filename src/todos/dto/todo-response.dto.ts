@@ -4,4 +4,5 @@ export class TodoResponseDto {
   id!: number;
   name!: string;
   status!: TodoStatus;
+  isEliminated!: boolean;
 }
