@@ -1,0 +1,6 @@
+RUN FRONT: npx serve . -s -l 3001
+
+El -s evita que se busque a /algo como un archivo (-spa)
+El -l asigna un puerto fijo.
+
+En la versión final mover el index.html adentro de public, y podés ejecutar npx serve public y queda pituco.
