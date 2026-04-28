@@ -58,7 +58,7 @@ export class TodosController {
   }
 
   //Modificar isEliminated a true o false
-  @Patch(':id/iseliminated')
+  @Patch(':id/is-eliminated')
   async updateIsEliminated(
     @Param('url') url: string,
     @Param('id', ParseIntPipe) id: number,
