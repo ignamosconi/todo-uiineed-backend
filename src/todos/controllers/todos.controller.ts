@@ -85,7 +85,7 @@ export class TodosController {
     return this.todosService.clearAll(url);
   }
 
-  //Se cambia isEliminated por true y la Todo mantiene su estado anterior a ser eliminada.
+  //Se actualizan a todas las 'todos' con isEliminated: false por isEliminated:true, manteniendo su estado anterior a ser eliminadas.
   @Patch('restore-trash')
   async restore(@Param('url') url: string) {
     return this.todosService.restoreTrash(url);
