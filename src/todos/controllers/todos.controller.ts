@@ -7,20 +7,13 @@ import type { ITodosService } from '../services/todos.service.interface';
 import { TrimNamePipe } from '../pipes/trim-name.pipe';
 import { TodoStatusPipe } from '../pipes/todo-status.pipe';
 import { UpdateTodoNameDto } from '../dto/update-todo-name.dto';
+import { UpdateTodoIsEliminatedDto } from '../dto/update-todo-isEliminated.dto';
 
 @Controller('todos/:url')
 export class TodosController {
   constructor(
     @Inject('ITodosService') private readonly todosService: ITodosService,
   ) {}
-
-  @Post()
-  async add(
-    @Param('url') url: string,
-    @Body(new TrimNamePipe()) dto: CreateTodoDto,
-  ) {
-    return this.todosService.create(url, dto.name);
-  }
 
   //Active: Todos con status CREATED o COMPLETED, con isEliminated! = false
   @Get()
@@ -30,6 +23,15 @@ export class TodosController {
   ) {
     return this.todosService.findActiveByStatus(url, status);
   }
+
+  @Post()
+  async add(
+    @Param('url') url: string,
+    @Body(new TrimNamePipe()) dto: CreateTodoDto,
+  ) {
+    return this.todosService.create(url, dto.name);
+  }
+
 
   //Trash = Todos con isEliminated! = true
   @Get('trash')
@@ -53,6 +55,16 @@ export class TodosController {
     @Body() dto: UpdateTodoNameDto,
   ) {
     return this.todosService.changeName(url, id, dto.name);
+  }
+
+  //Modificar isEliminated a true o false
+  @Patch(':id/iseliminated')
+  async updateIsEliminated(
+    @Param('url') url: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTodoIsEliminatedDto,
+  ) {
+    return this.todosService.changeIsEliminated(url, id, dto.isEliminated);
   }
 
   //Marcar all todos como completed

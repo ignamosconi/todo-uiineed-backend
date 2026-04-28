@@ -10,6 +10,7 @@ export interface ITodosService {
 
   changeStatus(url: string, id: number, status: TodoStatus): Promise<SuccessResponseDto>;
   changeName(url: string, id:number, name: string): Promise<SuccessResponseDto>;
+  changeIsEliminated(url: string, id:number, isEliminated: boolean): Promise<SuccessResponseDto>;
   
   completeAll(url: string): Promise<SuccessResponseDto>;
   clearCompleted(url: string): Promise<SuccessResponseDto>;

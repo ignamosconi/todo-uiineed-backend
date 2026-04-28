@@ -14,8 +14,8 @@ export interface ITodosRepository {
   }): Promise<Todo[]>;
 
   updateStatus(id: number, listId: number, status: TodoStatus): Promise<void>;
-
   updateName(id: number, listId: number, name: string): Promise<void>;
+  updateIsEliminated(id: number, listId: number, isEliminated: boolean): Promise<void>;
 
   updateMany(listId: number, patch: Partial<Todo>, filters?: {
     status?: TodoStatus;

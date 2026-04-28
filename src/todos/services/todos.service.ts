@@ -62,7 +62,7 @@ export class TodosService implements ITodosService {
     }));
   }
 
-  async changeStatus(url: string, id: number, status: TodoStatus) {
+  async changeStatus(url: string, id: number, status: TodoStatus): Promise<SuccessResponseDto> {
     const list = await this.ensureList.execute(url);
 
     const todo = await this.todoRepo.findByIdAndList(id, list.id);
@@ -76,7 +76,7 @@ export class TodosService implements ITodosService {
     return { success: true };
   }
 
-  async changeName(url: string, id: number, name: string) {
+  async changeName(url: string, id: number, name: string): Promise<SuccessResponseDto> {
     const list = await this.ensureList.execute(url);
 
     const todo = await this.todoRepo.findByIdAndList(id, list.id);
@@ -89,6 +89,19 @@ export class TodosService implements ITodosService {
 
     return { success: true };
   }
+
+  async changeIsEliminated(url: string, id:number, isEliminated: boolean): Promise<SuccessResponseDto> {
+    const list = await this.ensureList.execute(url);
+    const todo = await this.todoRepo.findByIdAndList(id, list.id);
+
+    if (!todo) {
+      throw new NotFoundException('Todo no encontrado');
+    }
+
+    await this.todoRepo.updateIsEliminated(id, list.id, isEliminated);
+
+    return { success: true}
+  };
 
 
   async completeAll(url: string): Promise<SuccessResponseDto> {

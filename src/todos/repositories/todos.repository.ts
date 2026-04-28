@@ -94,6 +94,20 @@ export class TodosRepository {
       .execute();
   }
 
+  async updateIsEliminated(
+    id: number,
+    listId: number,
+    isEliminated: boolean,
+  ): Promise<void> {
+    await this.ormRepo
+      .createQueryBuilder()
+      .update(Todo)
+      .set({ isEliminated })
+      .where('id = :id', { id })
+      .andWhere('listId = :listId', { listId })
+      .execute();
+  }
+
   async updateMany(
     listId: number,
     patch: Partial<Todo>,
