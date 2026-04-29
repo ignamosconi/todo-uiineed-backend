@@ -1,7 +1,10 @@
-import { Controller, Post, Inject, Get, Param } from '@nestjs/common';
+import { Controller, Post, Inject, Get, Param, Body, Patch } from '@nestjs/common';
 import type { IListsService } from '../services/lists.service.interface';
 import { CreateListResponseDto } from '../dto/create-list-response.dto';
-import { ListMetadataDto } from '../dto/list-metadata.dto';
+import { ListMetadataDto } from '../dto/list-metadata-response.dto';
+import { UpdateListDto } from '../dto/udpate-list.dto';
+import { UpdateListResponseDto } from '../dto/update-list-response.dto';
+
 
 @Controller('lists')
 export class ListsController {
@@ -17,5 +20,13 @@ export class ListsController {
   @Get('/:url')
   async getList(@Param('url') url: string): Promise<ListMetadataDto> {
     return this.listsService.getListMetadata(url);
+  }
+
+  @Patch('/:url')
+  async updateTitle(
+    @Param('url') url: string,
+    @Body() dto: UpdateListDto
+  ): Promise<UpdateListResponseDto> {
+    return this.listsService.updateList(url, dto.title);
   }
 }
