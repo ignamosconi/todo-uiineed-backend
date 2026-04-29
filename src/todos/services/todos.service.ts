@@ -30,7 +30,10 @@ export class TodosService implements ITodosService {
   async findActiveByStatus(url: string, status?: TodoStatus): Promise<TodoResponseDto[]> {
     const list = await this.ensureList.execute(url);
 
-    const filters: any = { isEliminated: false };
+    const filters: {
+      status?: TodoStatus;
+      isEliminated?: boolean;
+    } = { isEliminated: false };
 
     if (status) {
       filters.status = status;
@@ -62,7 +65,7 @@ export class TodosService implements ITodosService {
     }));
   }
 
-  async changeStatus(url: string, id: number, status: TodoStatus): Promise<SuccessResponseDto> {
+  async changeStatus(url: string, id: number, status: TodoStatus): Promise<TodoResponseDto> {
     const list = await this.ensureList.execute(url);
 
     const todo = await this.todoRepo.findByIdAndList(id, list.id);
@@ -72,11 +75,15 @@ export class TodosService implements ITodosService {
     }
 
     await this.todoRepo.updateStatus(id, list.id, status);
-
-    return { success: true };
+    return {
+      id: todo.id,
+      name: todo.name,
+      status: status,
+      isEliminated: todo.isEliminated,
+    };
   }
 
-  async changeName(url: string, id: number, name: string): Promise<SuccessResponseDto> {
+  async changeName(url: string, id: number, name: string): Promise<TodoResponseDto> {
     const list = await this.ensureList.execute(url);
 
     const todo = await this.todoRepo.findByIdAndList(id, list.id);
@@ -85,12 +92,17 @@ export class TodosService implements ITodosService {
       throw new NotFoundException('Todo no encontrado');
     }
 
-    await this.todoRepo.updateName(id, list.id, name);
+    await this.todoRepo.updateName(id, list.id, name)
+    return {
+      id: todo.id,
+      name: name,
+      status: todo.status,
+      isEliminated: todo.isEliminated,
+    };
 
-    return { success: true };
   }
 
-  async changeIsEliminated(url: string, id:number, isEliminated: boolean): Promise<SuccessResponseDto> {
+  async changeIsEliminated(url: string, id:number, isEliminated: boolean): Promise<TodoResponseDto> {
     const list = await this.ensureList.execute(url);
     const todo = await this.todoRepo.findByIdAndList(id, list.id);
 
@@ -99,8 +111,12 @@ export class TodosService implements ITodosService {
     }
 
     await this.todoRepo.updateIsEliminated(id, list.id, isEliminated);
-
-    return { success: true}
+    return {
+      id: todo.id,
+      name: todo.name,
+      status: todo.status,
+      isEliminated: isEliminated,
+    };
   };
 
 
@@ -145,7 +161,7 @@ export class TodosService implements ITodosService {
 
     await this.todoRepo.deleteMany(list.id);
 
-    return { success: true };
+    return { success: true};
   }
 
   async restoreTrash(url: string): Promise<SuccessResponseDto> {

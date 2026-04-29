@@ -8,6 +8,8 @@ import { TrimNamePipe } from '../pipes/trim-name.pipe';
 import { TodoStatusPipe } from '../pipes/todo-status.pipe';
 import { UpdateTodoNameDto } from '../dto/update-todo-name.dto';
 import { UpdateTodoIsEliminatedDto } from '../dto/update-todo-isEliminated.dto';
+import { TodoResponseDto } from '../dto/todo-response.dto';
+import { SuccessResponseDto } from '../dto/success-response.dto';
 
 @Controller('todos/:url')
 export class TodosController {
@@ -20,7 +22,7 @@ export class TodosController {
   async getActive(
     @Param('url') url: string,
     @Query('status', TodoStatusPipe) status?: TodoStatus,
-  ) {
+  ): Promise<TodoResponseDto[]> {
     return this.todosService.findActiveByStatus(url, status);
   }
 
@@ -28,14 +30,14 @@ export class TodosController {
   async add(
     @Param('url') url: string,
     @Body(new TrimNamePipe()) dto: CreateTodoDto,
-  ) {
+  ): Promise<TodoResponseDto> {
     return this.todosService.create(url, dto.name);
   }
 
 
   //Trash = Todos con isEliminated! = true
   @Get('trash')
-  async getTrash(@Param('url') url: string) {
+  async getTrash(@Param('url') url: string): Promise<TodoResponseDto[]> {
     return this.todosService.findTrash(url);
   }
 
@@ -44,7 +46,7 @@ export class TodosController {
     @Param('url') url: string,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateTodoStatusDto,
-  ) {
+  ): Promise<TodoResponseDto> {
     return this.todosService.changeStatus(url, id, dto.status);
   }
 
@@ -53,7 +55,7 @@ export class TodosController {
     @Param('url') url: string,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateTodoNameDto,
-  ) {
+  ): Promise<TodoResponseDto> {
     return this.todosService.changeName(url, id, dto.name);
   }
 
@@ -63,39 +65,38 @@ export class TodosController {
     @Param('url') url: string,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateTodoIsEliminatedDto,
-  ) {
+  ): Promise<TodoResponseDto> {
     return this.todosService.changeIsEliminated(url, id, dto.isEliminated);
   }
 
   //Marcar all todos como completed
   @Patch('complete-all')
-  async allDone(@Param('url') url: string) {
+  async allDone(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.completeAll(url);
   }
 
   //Pasar all todos completed a trash
   @Patch('clear-completed')
-  async clearCompleted(@Param('url') url: string) {
+  async clearCompleted(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.clearCompleted(url);
   }
 
   //Pasar all todos created y completed a trash
   @Patch('clear-all')
-  async deleteAll(@Param('url') url: string) {
+  async deleteAll(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.clearAll(url);
   }
 
   //Se actualizan a todas las 'todos' con isEliminated: false por isEliminated:true, manteniendo su estado anterior a ser eliminadas.
   @Patch('restore-trash')
-  async restore(@Param('url') url: string) {
+  async restore(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.restoreTrash(url);
   }
 
   //Borrar de la bd todo lo que esté en trash. 
   @Delete('clear-trash')
-  async clearTrash(@Param('url') url: string) {
+  async clearTrash(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.clearTrash(url);
   }
-
 
 }
