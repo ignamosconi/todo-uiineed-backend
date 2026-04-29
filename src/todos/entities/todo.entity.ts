@@ -7,7 +7,7 @@ export class Todo {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ length: 126 })
   name!: string;
 
   @Column({

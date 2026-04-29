@@ -6,6 +6,9 @@ export class List {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Column({ length: 50, default: ""})
+  title: string = "";
+
   @Column({ unique: true })
   url!: string;
 
