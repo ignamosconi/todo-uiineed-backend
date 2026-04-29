@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Todo } from '../entities/todo.entity';
@@ -26,13 +26,6 @@ export class TodosRepository {
   /*
     FINDs
   */
-  async findById(id: number): Promise<Todo | null> {
-    return this.ormRepo
-      .createQueryBuilder('todo')
-      .where('todo.id = :id', { id })
-      .getOne();
-  }
-
   async findAllByList(
     listId: number,
     filters?: { status?: TodoStatus; isEliminated?: boolean },
@@ -66,46 +59,18 @@ export class TodosRepository {
   /*
     UPDATEs
   */
-  async updateStatus(
-    id: number,
-    listId: number,
-    status: TodoStatus,
-  ): Promise<void> {
-    await this.ormRepo
+  async updateOne(id: number, listId: number, patch: Partial<Todo>): Promise<void> {
+    const result = await this.ormRepo
       .createQueryBuilder()
       .update(Todo)
-      .set({ status })
+      .set(patch)
       .where('id = :id', { id })
       .andWhere('listId = :listId', { listId })
       .execute();
-  }
 
-  async updateName(
-    id: number,
-    listId: number,
-    name: string,
-  ): Promise<void> {
-    await this.ormRepo
-      .createQueryBuilder()
-      .update(Todo)
-      .set({ name })
-      .where('id = :id', { id })
-      .andWhere('listId = :listId', { listId })
-      .execute();
-  }
-
-  async updateIsEliminated(
-    id: number,
-    listId: number,
-    isEliminated: boolean,
-  ): Promise<void> {
-    await this.ormRepo
-      .createQueryBuilder()
-      .update(Todo)
-      .set({ isEliminated })
-      .where('id = :id', { id })
-      .andWhere('listId = :listId', { listId })
-      .execute();
+    if (result.affected === 0) {
+      throw new NotFoundException('Todo no encontrado');
+    }
   }
 
   async updateMany(
