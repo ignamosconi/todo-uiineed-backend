@@ -1,3 +1,22 @@
+TODOS BACKEND: 
+0. Añadir position en todo?
+1. Cifrar los archivos que se guardan en la bd? 
+2. Añadir un "express-rate-limit" así evitamos spam, por ejemplo “máximo 3 listas por minuto por IP”. Lo mismo con los todos ¿
+3. Borrar de la existencia de la bd a listas vacías durante más de 1 hora.
+4. Borrar de la existencia de la bd a listas con todos que no se hayan tocado en 2 semanas.
+5. Incorporar las reglas en el front que aparece cuando creás lista nueva y no hay todos.
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------
+TODOS LLUVIA DE IDEAS PRE PROGRAMACIÓN:
+
 1. Función que tras usarse cree una nueva lista con una ID única.
 
 Las funciones que describo a continuación serán para una lista en particular (seguro uno de los parámetros termina siendo el link).
