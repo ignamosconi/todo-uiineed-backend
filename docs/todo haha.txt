@@ -6,7 +6,8 @@ TODOS BACKEND:
 4. Borrar de la existencia de la bd a listas con todos que no se hayan tocado en 2 semanas.
 5. Incorporar las reglas en el front que aparece cuando creás lista nueva y no hay todos.
 
-
+TODOS FRONT:
+1. Hacer que se pueda editar en simultáneo? 
 
 
 
