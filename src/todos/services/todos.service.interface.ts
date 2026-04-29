@@ -8,9 +8,9 @@ export interface ITodosService {
   findTrash(url: string): Promise<TodoResponseDto[]>;
   findActiveByStatus(url: string, status?: TodoStatus): Promise<TodoResponseDto[]>;
 
-  changeStatus(url: string, id: number, status: TodoStatus): Promise<SuccessResponseDto>;
-  changeName(url: string, id:number, name: string): Promise<SuccessResponseDto>;
-  changeIsEliminated(url: string, id:number, isEliminated: boolean): Promise<SuccessResponseDto>;
+  changeStatus(url: string, id: number, status: TodoStatus): Promise<TodoResponseDto>;
+  changeName(url: string, id:number, name: string): Promise<TodoResponseDto>;
+  changeIsEliminated(url: string, id:number, isEliminated: boolean): Promise<TodoResponseDto>;
   
   completeAll(url: string): Promise<SuccessResponseDto>;
   clearCompleted(url: string): Promise<SuccessResponseDto>;
