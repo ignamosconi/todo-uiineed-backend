@@ -7,16 +7,12 @@ export interface ITodosRepository {
   save(name: string, list: List): Promise<Todo>;
 
   findByIdAndList(id: number, listId: number): Promise<Todo | null>;
-
   findAllByList(listId: number, filters?: {
     status?: TodoStatus;
     isEliminated?: boolean;
   }): Promise<Todo[]>;
 
-  updateStatus(id: number, listId: number, status: TodoStatus): Promise<void>;
-  updateName(id: number, listId: number, name: string): Promise<void>;
-  updateIsEliminated(id: number, listId: number, isEliminated: boolean): Promise<void>;
-
+  updateOne(id: number, listId: number, patch: Partial<Todo>): Promise<void>;
   updateMany(listId: number, patch: Partial<Todo>, filters?: {
     status?: TodoStatus;
     isEliminated?: boolean;

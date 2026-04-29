@@ -5,6 +5,7 @@ import { TodoResponseDto } from '../dto/todo-response.dto';
 import { SuccessResponseDto } from '../dto/success-response.dto';
 import { TodoStatus } from '../enums/todo-status.enum';
 import { EnsureListHelper } from '../helpers/ensure-list.helper';
+import { Todo } from '../entities/todo.entity';
 
 @Injectable()
 export class TodosService implements ITodosService {
@@ -13,17 +14,40 @@ export class TodosService implements ITodosService {
     private readonly ensureList: EnsureListHelper,
   ) {}
 
-  async create(url: string, name: string): Promise<TodoResponseDto> {
-    const list = await this.ensureList.execute(url);
+  /*
+    FUNCIONES PRIVADAS
+  */
+  private async getTodoOrFail(id: number, listId: number): Promise<Todo> {
+    const todo = await this.todoRepo.findByIdAndList(id, listId);
+    if (!todo) throw new NotFoundException('Todo no encontrado');
+    return todo;
+  }
 
-    const todo = await this.todoRepo.save(name, list);
-
+  private toDto(todo: Todo): TodoResponseDto {
     return {
       id: todo.id,
       name: todo.name,
       status: todo.status,
       isEliminated: todo.isEliminated,
     };
+  }
+
+  private async updateAndMerge(id: number, listId: number, patch: Partial<Todo>): Promise<Todo> {
+    const todo = await this.getTodoOrFail(id, listId);
+
+    await this.todoRepo.updateOne(id, listId, patch);
+
+    //Podría darse el caso que al usuario le llega info desactualizada (porque en la db otra query actualizó el todo después que nosotros),
+    //pero prefiero ahorrar la query de pedir el todo_updated. Si fuera una app de un banco ahí sí hacés la query extra jaja.
+    return { ...todo, ...patch }; 
+  }
+
+  /*
+    FUNCIONES PÚBLICAS
+  */
+  async create(url: string, name: string): Promise<TodoResponseDto> {
+    const list = await this.ensureList.execute(url);
+    return this.toDto(await this.todoRepo.save(name, list));
   }
 
   //Encontramos los todos que no están en la trash todavía
@@ -35,18 +59,13 @@ export class TodosService implements ITodosService {
       isEliminated?: boolean;
     } = { isEliminated: false };
 
-    if (status) {
+    if (status !== undefined) {
       filters.status = status;
     }
 
     const todos = await this.todoRepo.findAllByList(list.id, filters);
 
-    return todos.map(todo => ({
-      id: todo.id,
-      name: todo.name,
-      status: todo.status,
-      isEliminated: todo.isEliminated,
-    }));
+    return todos.map(todo => this.toDto(todo));
   }
 
   //Encontramos los todos en trash
@@ -57,67 +76,32 @@ export class TodosService implements ITodosService {
       isEliminated: true,
     });
 
-    return todos.map(todo => ({
-      id: todo.id,
-      name: todo.name,
-      status: todo.status,
-      isEliminated: todo.isEliminated,
-    }));
+    return todos.map(todo => this.toDto(todo));
   }
 
   async changeStatus(url: string, id: number, status: TodoStatus): Promise<TodoResponseDto> {
     const list = await this.ensureList.execute(url);
 
-    const todo = await this.todoRepo.findByIdAndList(id, list.id);
-
-    if (!todo) {
-      throw new NotFoundException('Todo no encontrado');
-    }
-
-    await this.todoRepo.updateStatus(id, list.id, status);
-    return {
-      id: todo.id,
-      name: todo.name,
-      status: status,
-      isEliminated: todo.isEliminated,
-    };
+    return this.toDto(
+      await this.updateAndMerge(id, list.id, { status }),
+    );
   }
 
   async changeName(url: string, id: number, name: string): Promise<TodoResponseDto> {
     const list = await this.ensureList.execute(url);
 
-    const todo = await this.todoRepo.findByIdAndList(id, list.id);
-
-    if (!todo) {
-      throw new NotFoundException('Todo no encontrado');
-    }
-
-    await this.todoRepo.updateName(id, list.id, name)
-    return {
-      id: todo.id,
-      name: name,
-      status: todo.status,
-      isEliminated: todo.isEliminated,
-    };
-
+    return this.toDto(
+      await this.updateAndMerge(id, list.id, { name }),
+    );
   }
 
-  async changeIsEliminated(url: string, id:number, isEliminated: boolean): Promise<TodoResponseDto> {
+  async changeIsEliminated(url: string, id: number, isEliminated: boolean): Promise<TodoResponseDto> {
     const list = await this.ensureList.execute(url);
-    const todo = await this.todoRepo.findByIdAndList(id, list.id);
 
-    if (!todo) {
-      throw new NotFoundException('Todo no encontrado');
-    }
-
-    await this.todoRepo.updateIsEliminated(id, list.id, isEliminated);
-    return {
-      id: todo.id,
-      name: todo.name,
-      status: todo.status,
-      isEliminated: isEliminated,
-    };
-  };
+    return this.toDto(
+      await this.updateAndMerge(id, list.id, { isEliminated }),
+    );
+  }
 
 
   async completeAll(url: string): Promise<SuccessResponseDto> {
