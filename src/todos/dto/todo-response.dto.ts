@@ -5,4 +5,5 @@ export class TodoResponseDto {
   name!: string;
   status!: TodoStatus;
   isEliminated!: boolean;
+  position!: number;
 }

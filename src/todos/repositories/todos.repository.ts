@@ -4,22 +4,34 @@ import { Repository } from 'typeorm';
 import { Todo } from '../entities/todo.entity';
 import { List } from '../../lists/entities/list.entity';
 import { TodoStatus } from '../enums/todo-status.enum';
+import { ReorderItemDto } from '../dto/reorder-item.dto';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class TodosRepository {
   constructor(
     @InjectRepository(Todo)
     private readonly ormRepo: Repository<Todo>,
+    private readonly dataSource: DataSource, //Para las transacciones de reorden.
   ) {}
 
   /*
     SAVE
   */
   async save(name: string, list: List): Promise<Todo> {
+    const last = await this.ormRepo
+      .createQueryBuilder('todo')
+      .where('todo.listId = :listId', { listId: list.id })
+      .orderBy('todo.position', 'DESC')
+      .getOne();
+
+    const position = last ? last.position + 1 : 0; //Lo hacemos de 1 en 1 porque position es float y podemos añadir decimales.
+
     return this.ormRepo.save({
       name,
       list,
       status: TodoStatus.CREATED,
+      position,
     });
   }
 
@@ -43,7 +55,8 @@ export class TodosRepository {
         isEliminated: filters.isEliminated,
       });
     }
-
+    
+    qb.orderBy('todo.position', 'ASC');
     return qb.getMany();
   }
 
@@ -95,6 +108,21 @@ export class TodosRepository {
     }
 
     await qb.execute();
+  }
+
+  /*
+    REPOSICIONAMIENTO DE TODOS
+  */
+
+  async existsByPosition(listId: number, position: number): Promise<boolean> {
+    const count = await this.ormRepo.count({
+      where: {
+        list: { id: listId },
+        position,
+      },
+    });
+
+    return count > 0;
   }
 
   /*
