@@ -1,3 +1,0 @@
-There will be a backend run on NEST.JS whith the following files:
-• ListsController: Has the POST that generates the UNIQUE link to a TO-DO list.
-• TodosController: Has the GET, PATCH & DELETE used by the tasks (sent from a specific list)    
