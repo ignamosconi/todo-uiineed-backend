@@ -4,7 +4,6 @@ TODOS BACKEND:
 2. Añadir un "express-rate-limit" así evitamos spam, por ejemplo “máximo 3 listas por minuto por IP”. Lo mismo con los todos ¿
 3. Borrar de la existencia de la bd a listas vacías durante más de 1 hora.
 4. Borrar de la existencia de la bd a listas con todos que no se hayan tocado en 2 semanas.
-5. Incorporar las reglas en el front que aparece cuando creás lista nueva y no hay todos.
 
 TODOS FRONT:
 1. Hacer que se pueda editar en simultáneo? 
