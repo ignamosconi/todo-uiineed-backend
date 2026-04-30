@@ -1,6 +1,7 @@
 import { Todo } from '../entities/todo.entity';
 import { List } from '../../lists/entities/list.entity';
 import { TodoStatus } from '../enums/todo-status.enum';
+import { ReorderItemDto } from '../dto/reorder-item.dto';
 
 //El repo devuelve la entity completa y no un DTO, porque de hacerlo estaríamos acoplándolo a la API.
 export interface ITodosRepository {
@@ -17,6 +18,8 @@ export interface ITodosRepository {
     status?: TodoStatus;
     isEliminated?: boolean;
   }): Promise<void>;
+  
+  existsByPosition(listId: number, position: number): Promise<boolean>;
 
   deleteMany(listId: number): Promise<void>;
 }

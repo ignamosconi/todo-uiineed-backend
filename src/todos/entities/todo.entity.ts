@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Index } from 'typeorm';
 import { List } from '../../lists/entities/list.entity';
 import { TodoStatus } from '../enums/todo-status.enum';
 
+@Index(['list', 'position'], { unique: true})
 @Entity('todos')
 export class Todo {
   @PrimaryGeneratedColumn()
@@ -9,6 +10,9 @@ export class Todo {
 
   @Column({ length: 126 })
   name!: string;
+
+  @Column({ type: 'float' })
+  position!: number;
 
   @Column({
     type: 'enum',

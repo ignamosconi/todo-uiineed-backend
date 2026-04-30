@@ -10,6 +10,7 @@ import { UpdateTodoNameDto } from '../dto/update-todo-name.dto';
 import { UpdateTodoIsEliminatedDto } from '../dto/update-todo-isEliminated.dto';
 import { TodoResponseDto } from '../dto/todo-response.dto';
 import { SuccessResponseDto } from '../dto/success-response.dto';
+import { ReorderItemDto } from '../dto/reorder-item.dto';
 
 @Controller('todos/:url')
 export class TodosController {
@@ -39,6 +40,14 @@ export class TodosController {
   @Get('trash')
   async getTrash(@Param('url') url: string): Promise<TodoResponseDto[]> {
     return this.todosService.findTrash(url);
+  }
+
+  @Patch('reorder')
+  async reorder(
+    @Param('url') url: string,
+    @Body() dto: ReorderItemDto,
+  ): Promise<SuccessResponseDto> {
+    return this.todosService.reorder(url, dto);
   }
 
   @Patch(':id/status')

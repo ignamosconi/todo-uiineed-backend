@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ITodosService } from './todos.service.interface';
 import type { ITodosRepository } from '../repositories/todos.repository.interface';
 import { TodoResponseDto } from '../dto/todo-response.dto';
@@ -6,6 +6,7 @@ import { SuccessResponseDto } from '../dto/success-response.dto';
 import { TodoStatus } from '../enums/todo-status.enum';
 import { EnsureListHelper } from '../helpers/ensure-list.helper';
 import { Todo } from '../entities/todo.entity';
+import { ReorderItemDto } from '../dto/reorder-item.dto';
 
 @Injectable()
 export class TodosService implements ITodosService {
@@ -29,6 +30,7 @@ export class TodosService implements ITodosService {
       name: todo.name,
       status: todo.status,
       isEliminated: todo.isEliminated,
+      position: todo.position,
     };
   }
 
@@ -42,6 +44,11 @@ export class TodosService implements ITodosService {
     return { ...todo, ...patch }; 
   }
 
+  private isUniqueConstraintError(error: any): boolean {
+    return error?.code === '23505'; // Postgres unique violation
+  }
+
+
   /*
     FUNCIONES PÚBLICAS
   */
@@ -49,6 +56,72 @@ export class TodosService implements ITodosService {
     const list = await this.ensureList.execute(url);
     return this.toDto(await this.todoRepo.save(name, list));
   }
+
+  async reorder(url: string, item: ReorderItemDto): Promise<SuccessResponseDto> {
+    const list = await this.ensureList.execute(url);
+
+    const todo = await this.getTodoOrFail(item.id, list.id);
+
+    const beforeId = item.beforeId;
+    const afterId = item.afterId;
+
+    const MAX_RETRIES = 3;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const before = beforeId
+          ? await this.getTodoOrFail(beforeId, list.id)
+          : null;
+
+        const after = afterId
+          ? await this.getTodoOrFail(afterId, list.id)
+          : null;
+
+        let newPosition: number;
+
+        // Inicio
+        if (!before && after) {
+          newPosition = after.position - 1;
+        }
+
+        // Final
+        else if (before && !after) {
+          newPosition = before.position + 1;
+        }
+
+        // Entre dos
+        else if (before && after) {
+          if (before.position >= after.position) {
+            throw new BadRequestException('Orden inválido');
+          }
+
+          newPosition = (before.position + after.position) / 2 + Math.random() * 0.00001;
+        }
+
+        else {
+          throw new BadRequestException('Payload inválido');
+        }
+
+        await this.todoRepo.updateOne(todo.id, list.id, {
+          position: newPosition,
+        });
+
+        return { success: true };
+
+      } catch (error) {
+        //SOLO retry en unique constraint
+        if (!this.isUniqueConstraintError(error) || attempt === MAX_RETRIES - 1) {
+          throw error;
+        }
+
+        //opcional: pequeño delay (evita choque simultáneo)
+        await new Promise(res => setTimeout(res, 10));
+      }
+    }
+
+    throw new Error('Unexpected reorder failure');
+  }
+
 
   //Encontramos los todos que no están en la trash todavía
   async findActiveByStatus(url: string, status?: TodoStatus): Promise<TodoResponseDto[]> {

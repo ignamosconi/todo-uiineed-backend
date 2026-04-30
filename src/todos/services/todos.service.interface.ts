@@ -1,9 +1,12 @@
+import { ReorderItemDto } from '../dto/reorder-item.dto';
 import { SuccessResponseDto } from '../dto/success-response.dto';
 import { TodoResponseDto } from '../dto/todo-response.dto';
 import { TodoStatus } from '../enums/todo-status.enum';
 
 export interface ITodosService {
   create(url: string, name: string): Promise<TodoResponseDto>;
+
+  reorder(url: string, item: ReorderItemDto): Promise<SuccessResponseDto>;
 
   findTrash(url: string): Promise<TodoResponseDto[]>;
   findActiveByStatus(url: string, status?: TodoStatus): Promise<TodoResponseDto[]>;
