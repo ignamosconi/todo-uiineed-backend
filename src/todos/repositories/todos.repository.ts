@@ -4,15 +4,12 @@ import { Repository } from 'typeorm';
 import { Todo } from '../entities/todo.entity';
 import { List } from '../../lists/entities/list.entity';
 import { TodoStatus } from '../enums/todo-status.enum';
-import { ReorderItemDto } from '../dto/reorder-item.dto';
-import { DataSource } from 'typeorm';
 
 @Injectable()
 export class TodosRepository {
   constructor(
     @InjectRepository(Todo)
     private readonly ormRepo: Repository<Todo>,
-    private readonly dataSource: DataSource, //Para las transacciones de reorden.
   ) {}
 
   /*
