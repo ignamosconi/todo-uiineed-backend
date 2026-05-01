@@ -1,8 +1,5 @@
 TODOS BACKEND: 
 1. Añadir un "express-rate-limit" así evitamos spam, por ejemplo “máximo 3 listas por minuto por IP”. Lo mismo con los todos ¿
-2. Borrar de la existencia de la bd a listas vacías durante más de 1 hora.
-3. Borrar de la existencia de la bd a listas con todos que no se hayan tocado en 2 semanas.
-
 
 
 

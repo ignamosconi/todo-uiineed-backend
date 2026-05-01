@@ -1,17 +1,26 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Injectable, Inject, OnModuleInit } from '@nestjs/common';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { CronJob } from 'cron';
+import { ConfigService } from '@nestjs/config';
 import type { IListsService } from './lists.service.interface';
 
 @Injectable()
-export class CleanupService {
+export class CleanupService implements OnModuleInit {
   constructor(
-  @Inject('IListsService')
-  private readonly listsService: IListsService
-) {}
+    @Inject('IListsService')
+    private readonly listsService: IListsService,
+    private readonly configService: ConfigService,
+    private readonly schedulerRegistry: SchedulerRegistry,
+  ) {}
 
-  // cada 5 minutos = '*/5 * * * *' - Cada 10 segundos: '*/10 * * * * *'
-  @Cron('*/5 * * * *')
-  async handleCleanup() {
-    await this.listsService.cleanupLists();
+  onModuleInit() {
+    const cronTime = this.configService.getOrThrow<string>('CLEANUP_CRON');
+
+    const job = new CronJob(cronTime, async () => {
+      await this.listsService.cleanupLists();
+    });
+
+    this.schedulerRegistry.addCronJob('cleanup-job', job);
+    job.start();
   }
 }

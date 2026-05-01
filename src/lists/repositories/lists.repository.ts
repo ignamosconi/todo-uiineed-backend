@@ -4,12 +4,14 @@ import { Repository } from 'typeorm';
 import { List } from '../entities/list.entity';
 import { IListsRepository } from './lists.repository.interface';
 import { nanoid } from 'nanoid';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ListsRepository implements IListsRepository {
   constructor(
     @InjectRepository(List)
     private readonly ormRepo: Repository<List>,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(): Promise<List> {
@@ -42,9 +44,10 @@ export class ListsRepository implements IListsRepository {
 
   //Si una lista se creó y pasaron 10 minutos sin añadirse todos, se borra.
   async deleteEmptyLists(): Promise<void> {
+    const minutes = this.configService.get<number>('EMPTY_LIST_TTL_MINUTES');
     await this.ormRepo.query(`
       DELETE FROM lists
-      WHERE creation_date < NOW() - INTERVAL '10 minutes'
+      WHERE creation_date < NOW() - INTERVAL '${minutes} minutes'
       AND NOT EXISTS (
         SELECT 1 FROM todos WHERE todos."listId" = lists.id
       )
@@ -53,6 +56,7 @@ export class ListsRepository implements IListsRepository {
 
   //Si una lista lleva más de 2 semanas sin tener todos añadidos, se borra.
   async deleteInactiveLists(): Promise<void> {
+    const days = this.configService.get<number>('INACTIVE_LIST_TTL_DAYS');
     await this.ormRepo.query(`
       DELETE FROM lists
       WHERE EXISTS (
@@ -61,7 +65,7 @@ export class ListsRepository implements IListsRepository {
       AND NOT EXISTS (
         SELECT 1 FROM todos 
         WHERE todos."listId" = lists.id
-        AND todos."updatedAt" > NOW() - INTERVAL '7 days'
+        AND todos."updatedAt" > NOW() - INTERVAL '${days} days'
       )
     `);
   }
