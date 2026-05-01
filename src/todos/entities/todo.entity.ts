@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Index, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { List } from '../../lists/entities/list.entity';
 import { TodoStatus } from '../enums/todo-status.enum';
 
@@ -7,6 +7,12 @@ import { TodoStatus } from '../enums/todo-status.enum';
 export class Todo {
   @PrimaryGeneratedColumn()
   id!: number;
+
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 
   @Column({ length: 126 })
   name!: string;
@@ -26,6 +32,6 @@ export class Todo {
   @Column({ default: false })
   isEliminated!: boolean;
 
-  @ManyToOne(() => List, (list) => list.todos)
+  @ManyToOne(() => List, (list) => list.todos, { onDelete: 'CASCADE' })
   list!: List;
 }
