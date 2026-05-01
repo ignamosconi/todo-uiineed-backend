@@ -4,6 +4,7 @@ import { List } from './entities/list.entity';
 import { ListsController } from './controllers/lists.controller';
 import { ListsService } from './services/lists.service';
 import { ListsRepository } from './repositories/lists.repository';
+import { CleanupService } from './services/cleanup.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([List])],
@@ -18,11 +19,13 @@ import { ListsRepository } from './repositories/lists.repository';
     { provide: 'IListsService', 
       useClass: ListsService 
     },
+    CleanupService,
   ],
 
   exports: [
     TypeOrmModule, 
-    'IListsRepository'
+    'IListsRepository',
+    'IListsService',
   ],
 })
 export class ListsModule {}

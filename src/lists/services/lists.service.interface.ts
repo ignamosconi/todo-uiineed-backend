@@ -6,4 +6,6 @@ export interface IListsService {
   generateNewList(): Promise<CreateListResponseDto>;
   getListMetadata(url: string): Promise<ListMetadataDto>;
   updateList(url: string, title: string): Promise<UpdateListResponseDto>;
+
+  cleanupLists(): Promise<void>;
 }

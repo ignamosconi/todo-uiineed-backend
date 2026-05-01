@@ -39,4 +39,30 @@ export class ListsRepository implements IListsRepository {
     await this.ormRepo.update({ url }, { title });
     return this.ormRepo.findOneBy({ url });
   }
+
+  //Si una lista se creó y pasaron 10 minutos sin añadirse todos, se borra.
+  async deleteEmptyLists(): Promise<void> {
+    await this.ormRepo.query(`
+      DELETE FROM lists
+      WHERE creation_date < NOW() - INTERVAL '10 minutes'
+      AND NOT EXISTS (
+        SELECT 1 FROM todos WHERE todos."listId" = lists.id
+      )
+    `);
+  }
+
+  //Si una lista lleva más de 2 semanas sin tener todos añadidos, se borra.
+  async deleteInactiveLists(): Promise<void> {
+    await this.ormRepo.query(`
+      DELETE FROM lists
+      WHERE EXISTS (
+        SELECT 1 FROM todos WHERE todos."listId" = lists.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM todos 
+        WHERE todos."listId" = lists.id
+        AND todos."updatedAt" > NOW() - INTERVAL '7 days'
+      )
+    `);
+  }
 }

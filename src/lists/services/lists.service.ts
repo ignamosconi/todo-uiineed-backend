@@ -47,4 +47,9 @@ export class ListsService implements IListsService {
       title: list.title,
     };
   }
+
+  async cleanupLists(): Promise<void> {
+    await this.repository.deleteEmptyLists();
+    await this.repository.deleteInactiveLists();
+  }
 }
