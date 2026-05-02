@@ -29,7 +29,7 @@ export class TodosController {
   }
 
   @Post()
-  @Throttle({ default: { limit: 5, ttl: 5000 } }) // 5 cada 5s (aprox. 1/seg pero permite escribirlos rápido)
+  @Throttle({ default: { limit: 1, ttl: 1000 } }) // 1 cada 1s
   async add(
     @Param('url') url: string,
     @Body(new TrimNamePipe()) dto: CreateTodoDto,

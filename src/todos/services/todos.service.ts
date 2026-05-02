@@ -53,7 +53,21 @@ export class TodosService implements ITodosService {
     FUNCIONES PÚBLICAS
   */
   async create(url: string, name: string): Promise<TodoResponseDto> {
+    //Verificamos si la lista existe
     const list = await this.ensureList.execute(url);
+
+    //LÍMITE MÁXIMO DE TODOS → Se establece en .env → Sino se toman 100 por defecto.
+    const maxTodos = Number(process.env.MAX_TODOS_PER_LIST) || 100;
+
+    const count = await this.todoRepo.countByList(list.id);
+
+    if (count >= maxTodos) {
+      throw new BadRequestException(
+        `You've reached your ${maxTodos} todos limit; try deleting some completed ones :)`
+      );
+    }
+
+    //Creamos el todo
     return this.toDto(await this.todoRepo.save(name, list));
   }
 
