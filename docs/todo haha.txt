@@ -1,10 +1,5 @@
 TODOS BACKEND: 
-1. Añadir un "express-rate-limit" así evitamos spam, por ejemplo “máximo 3 listas por minuto por IP”. Lo mismo con los todos ¿
-2. si estás en vista trash y borrás toda la trash, el sistema no cambia a vista all
-3. Añadir un mensaje de fallo de backend (ahora se ve una pantalla en blanco)
-4. Hacer que el menú de quicks se muestre comprimido cuando la pestaña está pequeña. 
-5. Hacer, con localstorage, que si el menú de quicks está comprimido, dejarlo comprimido
-6. La app no se ve en los celus :(
+1. Añadir un "express-rate-limit" así evitamos spam, por ejemplo “máximo 3 listas por minuto por IP”. Lo mismo con los todos
 
 
 
