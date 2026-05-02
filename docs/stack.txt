@@ -1,4 +1,5 @@
 COMPONENT       TOOL        ROLE
 REPO            GITHUB      file verisoning
-BACK & FRONT    VERCEL      generate links, update tasks. Linked via vercel.json
-DATABASE        NEON        store tasks so they can be accesed from any device
+FRONT           VERCEL      Serve /public & has free URLs.
+BACK            RENDER      Supports nest with no trouble.
+DATABASE        NEON        Store tasks so they can be accesed from any device
