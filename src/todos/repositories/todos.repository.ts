@@ -65,6 +65,11 @@ export class TodosRepository {
       .andWhere('todo.listId = :listId', { listId })
       .getOne();
   }
+  async countByList(listId: number): Promise<number> {
+    return this.ormRepo.count({
+      where: { list: { id: listId } },
+    });
+  }
 
   /*
     UPDATEs

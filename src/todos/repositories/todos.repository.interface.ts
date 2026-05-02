@@ -12,6 +12,7 @@ export interface ITodosRepository {
     status?: TodoStatus;
     isEliminated?: boolean;
   }): Promise<Todo[]>;
+  countByList(listId: number): Promise<number>;
 
   updateOne(id: number, listId: number, patch: Partial<Todo>): Promise<void>;
   updateMany(listId: number, patch: Partial<Todo>, filters?: {
