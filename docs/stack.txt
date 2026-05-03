@@ -1,5 +1,5 @@
 COMPONENT       TOOL        ROLE
 REPO            GITHUB      file verisoning
-FRONT           VERCEL      Serve /public & has free URLs.
-BACK            RENDER      Supports nest with no trouble.
+FRONT           VERCEL      Serve /public with nic.ar domain
+BACK            FLY.IO      Your own free VM.
 DATABASE        NEON        Store tasks so they can be accesed from any device
