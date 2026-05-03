@@ -1,39 +1,142 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Todo } from '../entities/todo.entity';
 import { List } from '../../lists/entities/list.entity';
-import { ITodosRepository } from './todos.repository.interface';
+import { TodoStatus } from '../enums/todo-status.enum';
 
 @Injectable()
-export class TodosRepository implements ITodosRepository {
+export class TodosRepository {
   constructor(
     @InjectRepository(Todo)
     private readonly ormRepo: Repository<Todo>,
   ) {}
 
+  /*
+    SAVE
+  */
   async save(name: string, list: List): Promise<Todo> {
-    const todo = this.ormRepo.create({ name, list, status: 'created' });
-    return await this.ormRepo.save(todo);
-  }
-
-  async findStatusByUrl(url: string, status: string): Promise<Todo[]> {
-    return await this.ormRepo
+    const last = await this.ormRepo
       .createQueryBuilder('todo')
-      .innerJoin('todo.list', 'list')
-      .where('list.url = :url', { url })
-      .andWhere('todo.status = :status', { status })
-      .getMany();
+      .where('todo.listId = :listId', { listId: list.id })
+      .orderBy('todo.position', 'DESC')
+      .getOne();
+
+    const position = last ? last.position + 1 : 0; //Lo hacemos de 1 en 1 porque position es float y podemos añadir decimales.
+
+    return this.ormRepo.save({
+      name,
+      list,
+      status: TodoStatus.CREATED,
+      position,
+    });
   }
 
-  async updateStatus(id: number, status: string): Promise<void> {
-    await this.ormRepo.update(id, { status });
-  }
+  /*
+    FINDs
+  */
+  async findAllByList(
+    listId: number,
+    filters?: { status?: TodoStatus; isEliminated?: boolean },
+  ): Promise<Todo[]> {
+    const qb = this.ormRepo
+      .createQueryBuilder('todo')
+      .where('todo.listId = :listId', { listId });
 
-  async updateManyStatus(url: string, oldStatus: string | null, newStatus: string): Promise<void> {
-    const whereCondition: any = { list: { url } };
-    if (oldStatus) whereCondition.status = oldStatus;
+    if (filters?.status !== undefined) {
+      qb.andWhere('todo.status = :status', { status: filters.status });
+    }
+
+    if (filters?.isEliminated !== undefined) {
+      qb.andWhere('todo.isEliminated = :isEliminated', {
+        isEliminated: filters.isEliminated,
+      });
+    }
     
-    await this.ormRepo.update(whereCondition, { status: newStatus });
+    qb.orderBy('todo.position', 'ASC');
+    return qb.getMany();
+  }
+
+  //Nos aseguramos que el todo que quieren consultar sea de la lista en la que están trabajando.
+  async findByIdAndList(id: number, listId: number): Promise<Todo | null> {
+    return this.ormRepo
+      .createQueryBuilder('todo')
+      .where('todo.id = :id', { id })
+      .andWhere('todo.listId = :listId', { listId })
+      .getOne();
+  }
+  async countByList(listId: number): Promise<number> {
+    return this.ormRepo.count({
+      where: { list: { id: listId } },
+    });
+  }
+
+  /*
+    UPDATEs
+  */
+  async updateOne(id: number, listId: number, patch: Partial<Todo>): Promise<void> {
+    const result = await this.ormRepo
+      .createQueryBuilder()
+      .update(Todo)
+      .set(patch)
+      .where('id = :id', { id })
+      .andWhere('listId = :listId', { listId })
+      .execute();
+
+    if (result.affected === 0) {
+      throw new NotFoundException('Todo no encontrado');
+    }
+  }
+
+  async updateMany(
+    listId: number,
+    patch: Partial<Todo>,
+    filters?: { status?: TodoStatus; isEliminated?: boolean },
+  ): Promise<void> {
+    const qb = this.ormRepo
+      .createQueryBuilder()
+      .update(Todo)
+      .set(patch)
+      .where('listId = :listId', { listId });
+
+    if (filters?.status !== undefined) {
+      qb.andWhere('status = :status', { status: filters.status });
+    }
+
+    if (filters?.isEliminated !== undefined) {
+      qb.andWhere('isEliminated = :isEliminated', {
+        isEliminated: filters.isEliminated,
+      });
+    }
+
+    await qb.execute();
+  }
+
+  /*
+    REPOSICIONAMIENTO DE TODOS
+  */
+
+  async existsByPosition(listId: number, position: number): Promise<boolean> {
+    const count = await this.ormRepo.count({
+      where: {
+        list: { id: listId },
+        position,
+      },
+    });
+
+    return count > 0;
+  }
+
+  /*
+    DELETE trash
+  */
+  async deleteMany(listId: number): Promise<void> {
+    await this.ormRepo
+      .createQueryBuilder()
+      .delete()
+      .from(Todo)
+      .where('listId = :listId', { listId })
+      .andWhere('isEliminated = true')
+      .execute();
   }
 }
