@@ -48,6 +48,21 @@ export class TodosService implements ITodosService {
     return error?.code === '23505'; // Postgres unique violation
   }
 
+  private async rebalancePositions(listId: number): Promise<void> {
+    const todos = await this.todoRepo.findAllByList(listId);
+
+    // ordenamos por posición actual
+    todos.sort((a, b) => a.position - b.position);
+
+    const GAP = 1024;
+
+    for (let i = 0; i < todos.length; i++) {
+      await this.todoRepo.updateOne(todos[i].id, listId, {
+        position: (i + 1) * GAP,
+      });
+    }
+  }
+
 
   /*
     FUNCIONES PÚBLICAS
@@ -80,6 +95,7 @@ export class TodosService implements ITodosService {
     const afterId = item.afterId;
 
     const MAX_RETRIES = 3;
+    const GAP = 1024;
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
@@ -95,25 +111,31 @@ export class TodosService implements ITodosService {
 
         // Inicio
         if (!before && after) {
-          newPosition = after.position - 1;
+          newPosition = after.position - GAP;
         }
 
         // Final
         else if (before && !after) {
-          newPosition = before.position + 1;
+          newPosition = before.position + GAP;
         }
 
         // Entre dos
         else if (before && after) {
           if (before.position >= after.position) {
-            throw new BadRequestException('Orden inválido');
+            throw new BadRequestException('Invalid order');
           }
 
-          newPosition = (before.position + after.position) / 2 + Math.random() * 0.00001;
+          //Sin espacio entre dos: rebalancear y reintentar
+          const diff = after.position - before.position;
+          if (diff < 10) {
+            await this.rebalancePositions(list.id);
+            continue; // vuelve al loop (retry lógico)
+          }
+          newPosition = (before.position + after.position) / 2;
         }
 
         else {
-          throw new BadRequestException('Payload inválido');
+          throw new BadRequestException('Invalid payload');
         }
 
         await this.todoRepo.updateOne(todo.id, list.id, {
@@ -123,13 +145,17 @@ export class TodosService implements ITodosService {
         return { success: true };
 
       } catch (error) {
-        //SOLO retry en unique constraint
-        if (!this.isUniqueConstraintError(error) || attempt === MAX_RETRIES - 1) {
-          throw error;
+        if (this.isUniqueConstraintError(error)) {
+          //Si encontramos una colisión, rebalanceamos
+          await this.rebalancePositions(list.id);
+
+          //Añadimos un pequeño delay para evitar colisiones extras.
+          await new Promise(res => setTimeout(res, 10));
+
+          continue; // retry con datos nuevos
         }
 
-        //opcional: pequeño delay (evita choque simultáneo)
-        await new Promise(res => setTimeout(res, 10));
+        throw error;
       }
     }
 
@@ -238,11 +264,27 @@ export class TodosService implements ITodosService {
   async restoreTrash(url: string): Promise<SuccessResponseDto> {
     const list = await this.ensureList.execute(url);
 
-    await this.todoRepo.updateMany(
-      list.id,
-      { isEliminated: false },
-      { isEliminated: true },
-    );
+    const trashed = await this.todoRepo.findAllByList(list.id, {
+      isEliminated: true,
+    });
+
+    const active = await this.todoRepo.findAllByList(list.id, {
+      isEliminated: false,
+    });
+
+    const GAP = 1024;
+    let lastPosition = active.length
+      ? active[active.length - 1].position
+      : 0;
+
+    for (const todo of trashed) {
+      lastPosition += GAP;
+
+      await this.todoRepo.updateOne(todo.id, list.id, {
+        isEliminated: false,
+        position: lastPosition,
+      });
+    }
 
     return { success: true };
   }

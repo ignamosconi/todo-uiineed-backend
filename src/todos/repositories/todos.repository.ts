@@ -22,7 +22,8 @@ export class TodosRepository {
       .orderBy('todo.position', 'DESC')
       .getOne();
 
-    const position = last ? last.position + 1 : 0; //Lo hacemos de 1 en 1 porque position es float y podemos añadir decimales.
+    const GAP = 1024
+    const position = last ? last.position + GAP : GAP; //Lo hacemos de 1024 en 1024 para evitar errores.
 
     return this.ormRepo.save({
       name,
