@@ -29,7 +29,7 @@ export class TodosController {
   }
 
   @Post()
-  @Throttle({ default: { limit: 1, ttl: 1000 } }) // 1 cada 1s
+  @Throttle({ default: { limit: 5, ttl: 1000 } })
   async add(
     @Param('url') url: string,
     @Body(new TrimNamePipe()) dto: CreateTodoDto,
@@ -53,7 +53,7 @@ export class TodosController {
   }
 
   @Patch(':id/status')
-  @Throttle({ default: { limit: 20, ttl: 10000 } })
+  @Throttle({ default: { limit: 50, ttl: 10000 } })
   async updateStatus(
     @Param('url') url: string,
     @Param('id', ParseIntPipe) id: number,
@@ -63,7 +63,7 @@ export class TodosController {
   }
 
   @Patch(':id/name')
-  @Throttle({ default: { limit: 10, ttl: 10000 } })
+  @Throttle({ default: { limit: 20, ttl: 10000 } })
   async updateName(
     @Param('url') url: string,
     @Param('id', ParseIntPipe) id: number,
@@ -84,35 +84,35 @@ export class TodosController {
 
   //Marcar all todos como completed
   @Patch('complete-all')
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async allDone(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.completeAll(url);
   }
 
   //Pasar all todos completed a trash
   @Patch('clear-completed')
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async clearCompleted(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.clearCompleted(url);
   }
 
   //Pasar all todos created y completed a trash
   @Patch('clear-all')
-  @Throttle({ default: { limit: 2, ttl: 60000 } })
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   async deleteAll(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.clearAll(url);
   }
 
   //Se actualizan a todas las 'todos' con isEliminated: false por isEliminated:true, manteniendo su estado anterior a ser eliminadas.
   @Patch('restore-trash')
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async restore(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.restoreTrash(url);
   }
 
   //Borrar de la bd todo lo que esté en trash. 
   @Delete('clear-trash')
-  @Throttle({ default: { limit: 2, ttl: 60000 } })
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   async clearTrash(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.clearTrash(url);
   }
