@@ -14,7 +14,7 @@ export class ListsController {
   ) {}
 
   @Post()
-  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 por minuto
+  @Throttle({ default: { limit: 15, ttl: 60000 } }) 
   async create(): Promise<CreateListResponseDto> {
     return this.listsService.generateNewList();
   }
