@@ -84,35 +84,35 @@ export class TodosController {
 
   //Marcar all todos como completed
   @Patch('complete-all')
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 15, ttl: 60000 } }) 
   async allDone(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.completeAll(url);
   }
 
   //Pasar all todos completed a trash
   @Patch('clear-completed')
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 15, ttl: 60000 } }) 
   async clearCompleted(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.clearCompleted(url);
   }
 
   //Pasar all todos created y completed a trash
   @Patch('clear-all')
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: 15, ttl: 60000 } }) 
   async deleteAll(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.clearAll(url);
   }
 
   //Se actualizan a todas las 'todos' con isEliminated: false por isEliminated:true, manteniendo su estado anterior a ser eliminadas.
   @Patch('restore-trash')
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 15, ttl: 60000 } }) 
   async restore(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.restoreTrash(url);
   }
 
   //Borrar de la bd todo lo que esté en trash. 
   @Delete('clear-trash')
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: 15, ttl: 60000 } }) 
   async clearTrash(@Param('url') url: string): Promise<SuccessResponseDto> {
     return this.todosService.clearTrash(url);
   }
