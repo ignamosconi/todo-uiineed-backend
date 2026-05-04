@@ -44,26 +44,6 @@ export class TodosService implements ITodosService {
     return { ...todo, ...patch }; 
   }
 
-  private isUniqueConstraintError(error: any): boolean {
-    return error?.code === '23505'; // Postgres unique violation
-  }
-
-  private async rebalancePositions(listId: number): Promise<void> {
-    const todos = await this.todoRepo.findAllByList(listId);
-
-    // ordenamos por posición actual
-    todos.sort((a, b) => a.position - b.position);
-
-    const GAP = 1024;
-
-    for (let i = 0; i < todos.length; i++) {
-      await this.todoRepo.updateOne(todos[i].id, listId, {
-        position: (i + 1) * GAP,
-      });
-    }
-  }
-
-
   /*
     FUNCIONES PÚBLICAS
   */
@@ -89,77 +69,39 @@ export class TodosService implements ITodosService {
   async reorder(url: string, item: ReorderItemDto): Promise<SuccessResponseDto> {
     const list = await this.ensureList.execute(url);
 
-    const todo = await this.getTodoOrFail(item.id, list.id);
+    const todos = await this.todoRepo.findAllByList(list.id);
 
-    const beforeId = item.beforeId;
-    const afterId = item.afterId;
+    const moving = todos.find(t => t.id === item.id);
+    if (!moving) throw new NotFoundException('Todo no encontrado');
 
-    const MAX_RETRIES = 3;
-    const GAP = 1024;
+    const before = item.beforeId
+      ? todos.find(t => t.id === item.beforeId)
+      : null;
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-      try {
-        const before = beforeId
-          ? await this.getTodoOrFail(beforeId, list.id)
-          : null;
+    const after = item.afterId
+      ? todos.find(t => t.id === item.afterId)
+      : null;
 
-        const after = afterId
-          ? await this.getTodoOrFail(afterId, list.id)
-          : null;
+    let newPosition: number;
 
-        let newPosition: number;
-
-        // Inicio
-        if (!before && after) {
-          newPosition = after.position - GAP;
-        }
-
-        // Final
-        else if (before && !after) {
-          newPosition = before.position + GAP;
-        }
-
-        // Entre dos
-        else if (before && after) {
-          if (before.position >= after.position) {
-            throw new BadRequestException('Invalid order');
-          }
-
-          //Sin espacio entre dos: rebalancear y reintentar
-          const diff = after.position - before.position;
-          if (diff < 10) {
-            await this.rebalancePositions(list.id);
-            continue; // vuelve al loop (retry lógico)
-          }
-          newPosition = (before.position + after.position) / 2;
-        }
-
-        else {
-          throw new BadRequestException('Invalid payload');
-        }
-
-        await this.todoRepo.updateOne(todo.id, list.id, {
-          position: newPosition,
-        });
-
-        return { success: true };
-
-      } catch (error) {
-        if (this.isUniqueConstraintError(error)) {
-          //Si encontramos una colisión, rebalanceamos
-          await this.rebalancePositions(list.id);
-
-          //Añadimos un pequeño delay para evitar colisiones extras.
-          await new Promise(res => setTimeout(res, 10));
-
-          continue; // retry con datos nuevos
-        }
-
-        throw error;
-      }
+    if (before && after) {
+      // entre dos
+      newPosition = (before.position + after.position) / 2;
+    } else if (before) {
+      // al final
+      newPosition = before.position + 1024;
+    } else if (after) {
+      // al inicio
+      newPosition = after.position / 2;
+    } else {
+      throw new BadRequestException('Invalid payload');
     }
 
-    throw new Error('Unexpected reorder failure');
+    await this.todoRepo.updateOne(moving.id, list.id, {
+      position: newPosition,
+    });
+
+    return { success: true };
   }
 
 
