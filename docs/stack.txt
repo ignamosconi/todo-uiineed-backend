@@ -1,5 +1,6 @@
 COMPONENT       TOOL        ROLE
 REPO            GITHUB      file verisoning
-FRONT           VERCEL      Serve /public with nic.ar domain
+FRONT           VERCEL      Serve /public with vercel domain
+DNS             CLOUDFLARE  Use your own domain to serve the page.
 BACK            RENDER      -
 DATABASE        NEON        Store tasks so they can be accesed from any device
