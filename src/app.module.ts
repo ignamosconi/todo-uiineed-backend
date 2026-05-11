@@ -34,11 +34,8 @@ import { DelayInterceptor } from './common/interceptors/delay.interceptor';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host: config.get<string>('DB_HOST'),
-        port: config.get<number>('DB_PORT'),
-        username: config.get<string>('DB_USER'),
-        password: config.get<string>('DB_PASSWORD'),
-        database: config.get<string>('DB_NAME'),
+        url: config.get<string>('DATABASE_URL'),
+        ssl: { rejectUnauthorized: false },
         autoLoadEntities: true,
         synchronize: false,
         migrations: ['dist/migrations/*.js'],
