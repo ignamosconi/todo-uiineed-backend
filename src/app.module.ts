@@ -7,6 +7,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
+import { DelayInterceptor } from './common/interceptors/delay.interceptor';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
   ],
 
   providers: [
+    DelayInterceptor,
     {
       provide: APP_GUARD,
       useClass: CustomThrottlerGuard,

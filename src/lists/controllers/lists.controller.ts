@@ -16,11 +16,13 @@ export class ListsController {
   @Post()
   @Throttle({ default: { limit: 15, ttl: 60000 } }) 
   async create(): Promise<CreateListResponseDto> {
+    console.log('[POST /lists]: Creating a new list.')
     return this.listsService.generateNewList();
   }
 
   @Get('/:url')
   async getList(@Param('url') url: string): Promise<ListMetadataDto> {
+    console.log('[GET /lists/:url]: Getting list metadata.')
     return this.listsService.getListMetadata(url);
   }
 
@@ -29,6 +31,7 @@ export class ListsController {
     @Param('url') url: string,
     @Body() dto: UpdateListDto
   ): Promise<UpdateListResponseDto> {
+    console.log('[GET /lists/:url]: Getting list metadata.')
     return this.listsService.updateList(url, dto.title);
   }
 }
