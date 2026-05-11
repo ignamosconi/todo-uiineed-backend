@@ -16,26 +16,14 @@ export class TodosRepository {
     SAVE
   */
   async save(name: string, list: List): Promise<Todo> {
-    const GAP = 1024;
-
-    return await this.ormRepo.manager.transaction(async (manager) => {
-      // Lockeamos todas las filas de esta lista para serializar inserts concurrentes
-      const last = await manager
-          .createQueryBuilder(Todo, 'todo')
-          .where('todo.listId = :listId', { listId: list.id })
-          .orderBy('todo.position', 'DESC')
-          .setLock('pessimistic_write')
-          .getOne();
-
-      const position = last ? last.position + GAP : GAP;
-
-      return manager.save(Todo, {
+      const position = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+      
+      return this.ormRepo.save({
           name,
           list,
           status: TodoStatus.CREATED,
           position,
       });
-    });
   }
 
   /*
