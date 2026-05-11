@@ -35,11 +35,11 @@ import { DelayInterceptor } from './common/interceptors/delay.interceptor';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('DATABASE_URL'),
+        ssl: { rejectUnauthorized: false },
         autoLoadEntities: true,
         synchronize: false,
         migrations: ['dist/migrations/*.js'],
         migrationsRun: true,
-        
       }),
     }),
 
