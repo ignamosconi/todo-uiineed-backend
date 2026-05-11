@@ -40,7 +40,9 @@ import { DelayInterceptor } from './common/interceptors/delay.interceptor';
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: false,
+        migrations: ['dist/migrations/*.js'],
+        migrationsRun: true,
       }),
     }),
 
