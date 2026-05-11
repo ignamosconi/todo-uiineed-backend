@@ -6,6 +6,8 @@ import { TodosModule } from './todos/todos.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
+import { DelayInterceptor } from './common/interceptors/delay.interceptor';
 
 @Module({
   imports: [
@@ -32,12 +34,15 @@ import { APP_GUARD } from '@nestjs/core';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        url: config.get<string>('DATABASE_URL'),
+        host: config.get<string>('DB_HOST'),
+        port: config.get<number>('DB_PORT'),
+        username: config.get<string>('DB_USER'),
+        password: config.get<string>('DB_PASSWORD'),
+        database: config.get<string>('DB_NAME'),
         autoLoadEntities: true,
-        synchronize: true,
-        ssl: {
-          rejectUnauthorized: false,
-        },
+        synchronize: false,
+        migrations: ['dist/migrations/*.js'],
+        migrationsRun: true,
       }),
     }),
 
@@ -47,9 +52,10 @@ import { APP_GUARD } from '@nestjs/core';
   ],
 
   providers: [
+    DelayInterceptor,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: CustomThrottlerGuard,
     }
   ]
 })

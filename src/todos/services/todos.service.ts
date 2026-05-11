@@ -44,26 +44,6 @@ export class TodosService implements ITodosService {
     return { ...todo, ...patch }; 
   }
 
-  private isUniqueConstraintError(error: any): boolean {
-    return error?.code === '23505'; // Postgres unique violation
-  }
-
-  private async rebalancePositions(listId: number): Promise<void> {
-    const todos = await this.todoRepo.findAllByList(listId);
-
-    // ordenamos por posición actual
-    todos.sort((a, b) => a.position - b.position);
-
-    const GAP = 1024;
-
-    for (let i = 0; i < todos.length; i++) {
-      await this.todoRepo.updateOne(todos[i].id, listId, {
-        position: (i + 1) * GAP,
-      });
-    }
-  }
-
-
   /*
     FUNCIONES PÚBLICAS
   */
@@ -86,80 +66,65 @@ export class TodosService implements ITodosService {
     return this.toDto(await this.todoRepo.save(name, list));
   }
 
-  async reorder(url: string, item: ReorderItemDto): Promise<SuccessResponseDto> {
+  async reorder(url: string, item: ReorderItemDto) {
     const list = await this.ensureList.execute(url);
 
-    const todo = await this.getTodoOrFail(item.id, list.id);
+    const todos = await this.todoRepo.findAllByList(list.id);
 
-    const beforeId = item.beforeId;
-    const afterId = item.afterId;
+    const moving = todos.find(t => t.id === item.id);
+    if (!moving) throw new NotFoundException();
 
-    const MAX_RETRIES = 3;
-    const GAP = 1024;
+    const before = todos.find(t => t.id === item.beforeId);
+    const after = todos.find(t => t.id === item.afterId);
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-      try {
-        const before = beforeId
-          ? await this.getTodoOrFail(beforeId, list.id)
-          : null;
+    let newPosition: number;
 
-        const after = afterId
-          ? await this.getTodoOrFail(afterId, list.id)
-          : null;
-
-        let newPosition: number;
-
-        // Inicio
-        if (!before && after) {
-          newPosition = after.position - GAP;
-        }
-
-        // Final
-        else if (before && !after) {
-          newPosition = before.position + GAP;
-        }
-
-        // Entre dos
-        else if (before && after) {
-          if (before.position >= after.position) {
-            throw new BadRequestException('Invalid order');
-          }
-
-          //Sin espacio entre dos: rebalancear y reintentar
-          const diff = after.position - before.position;
-          if (diff < 10) {
-            await this.rebalancePositions(list.id);
-            continue; // vuelve al loop (retry lógico)
-          }
-          newPosition = (before.position + after.position) / 2;
-        }
-
-        else {
-          throw new BadRequestException('Invalid payload');
-        }
-
-        await this.todoRepo.updateOne(todo.id, list.id, {
-          position: newPosition,
-        });
-
-        return { success: true };
-
-      } catch (error) {
-        if (this.isUniqueConstraintError(error)) {
-          //Si encontramos una colisión, rebalanceamos
-          await this.rebalancePositions(list.id);
-
-          //Añadimos un pequeño delay para evitar colisiones extras.
-          await new Promise(res => setTimeout(res, 10));
-
-          continue; // retry con datos nuevos
-        }
-
-        throw error;
-      }
+    if (before && after) {
+      newPosition = (before.position + after.position) / 2;
+    } else if (before) {
+      newPosition = before.position + 1024;
+    } else if (after) {
+      newPosition = after.position / 2;
+    } else {
+      throw new BadRequestException();
     }
 
-    throw new Error('Unexpected reorder failure');
+    try {
+      await this.todoRepo.updateOne(moving.id, list.id, {
+        position: newPosition,
+      });
+    } catch {
+      // 👇 única reacción válida
+      await this.reindexPositions(list.id);
+
+      // recalcular después del reindex
+      return this.reorder(url, item);
+    }
+
+    return { success: true };
+  }
+  //Auxiliar de order
+  async reindexPositions(listId: number) {
+    const todos = await this.todoRepo.findAllByList(listId);
+
+    //Ordenamos
+    todos.sort((a, b) => a.position - b.position);
+
+    //Movemos todo a posiciones temporales para evitar colisiones
+    for (let i = 0; i < todos.length; i++) {
+      await this.todoRepo.updateOne(todos[i].id, listId, {
+        position: -(i + 1), // -1, -2, -3...
+      });
+    }
+
+    //Movemos todo a las posiciones finales, con gaps de 1024
+    let pos = 1024;
+    for (const todo of todos) {
+      await this.todoRepo.updateOne(todo.id, listId, {
+        position: pos,
+      });
+      pos += 1024;
+    }
   }
 
 
@@ -261,29 +226,44 @@ export class TodosService implements ITodosService {
     return { success: true};
   }
 
-  async restoreTrash(url: string): Promise<SuccessResponseDto> {
+  async restoreTrash(url: string) {
     const list = await this.ensureList.execute(url);
 
-    const trashed = await this.todoRepo.findAllByList(list.id, {
-      isEliminated: true,
-    });
+    const todos = await this.todoRepo.findAllByList(list.id);
 
-    const active = await this.todoRepo.findAllByList(list.id, {
-      isEliminated: false,
-    });
+    const active = todos
+      .filter(t => !t.isEliminated)
+      .sort((a, b) => a.position - b.position);
 
-    const GAP = 1024;
-    let lastPosition = active.length
-      ? active[active.length - 1].position
-      : 0;
+    const trashed = todos
+      .filter(t => t.isEliminated)
+      .sort((a, b) => a.position - b.position);
 
-    for (const todo of trashed) {
-      lastPosition += GAP;
+    //Movemos a posiciones temporales
+    const all = [...active, ...trashed];
 
-      await this.todoRepo.updateOne(todo.id, list.id, {
-        isEliminated: false,
-        position: lastPosition,
+    for (let i = 0; i < all.length; i++) {
+      await this.todoRepo.updateOne(all[i].id, list.id, {
+        position: -(i + 1),
       });
+    }
+
+    //Reconstruimos y posicionamos en nuevo orden final
+    let pos = 1024;
+
+    for (const t of active) {
+      await this.todoRepo.updateOne(t.id, list.id, {
+        position: pos,
+      });
+      pos += 1024;
+    }
+
+    for (const t of trashed) {
+      await this.todoRepo.updateOne(t.id, list.id, {
+        isEliminated: false,
+        position: pos,
+      });
+      pos += 1024;
     }
 
     return { success: true };

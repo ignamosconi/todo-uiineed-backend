@@ -1,9 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { DelayInterceptor } from './common/interceptors/delay.interceptor';
 
 async function bootstrap() {
-const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  app.set('trust proxy', 1); //identificar ips de usuarios (para el rate-limit)
 
   app.enableCors({
     origin: process.env.FRONTEND_URL,
@@ -37,6 +41,11 @@ const app = await NestFactory.create(AppModule);
         });
       },
     }),
+  );
+
+  //Delay artificial para simular el delay con la DB en production.
+  app.useGlobalInterceptors(
+    app.get(DelayInterceptor),
   );
 
   await app.listen(process.env.PORT ?? 3000);
