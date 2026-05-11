@@ -66,42 +66,65 @@ export class TodosService implements ITodosService {
     return this.toDto(await this.todoRepo.save(name, list));
   }
 
-  async reorder(url: string, item: ReorderItemDto): Promise<SuccessResponseDto> {
+  async reorder(url: string, item: ReorderItemDto) {
     const list = await this.ensureList.execute(url);
 
     const todos = await this.todoRepo.findAllByList(list.id);
 
     const moving = todos.find(t => t.id === item.id);
-    if (!moving) throw new NotFoundException('Todo no encontrado');
+    if (!moving) throw new NotFoundException();
 
-    const before = item.beforeId
-      ? todos.find(t => t.id === item.beforeId)
-      : null;
-
-    const after = item.afterId
-      ? todos.find(t => t.id === item.afterId)
-      : null;
+    const before = todos.find(t => t.id === item.beforeId);
+    const after = todos.find(t => t.id === item.afterId);
 
     let newPosition: number;
 
     if (before && after) {
-      // entre dos
       newPosition = (before.position + after.position) / 2;
     } else if (before) {
-      // al final
       newPosition = before.position + 1024;
     } else if (after) {
-      // al inicio
       newPosition = after.position / 2;
     } else {
-      throw new BadRequestException('Invalid payload');
+      throw new BadRequestException();
     }
 
-    await this.todoRepo.updateOne(moving.id, list.id, {
-      position: newPosition,
-    });
+    try {
+      await this.todoRepo.updateOne(moving.id, list.id, {
+        position: newPosition,
+      });
+    } catch {
+      // 👇 única reacción válida
+      await this.reindexPositions(list.id);
+
+      // recalcular después del reindex
+      return this.reorder(url, item);
+    }
 
     return { success: true };
+  }
+  //Auxiliar de order
+  async reindexPositions(listId: number) {
+    const todos = await this.todoRepo.findAllByList(listId);
+
+    //Ordenamos
+    todos.sort((a, b) => a.position - b.position);
+
+    //Movemos todo a posiciones temporales para evitar colisiones
+    for (let i = 0; i < todos.length; i++) {
+      await this.todoRepo.updateOne(todos[i].id, listId, {
+        position: -(i + 1), // -1, -2, -3...
+      });
+    }
+
+    //Movemos todo a las posiciones finales, con gaps de 1024
+    let pos = 1024;
+    for (const todo of todos) {
+      await this.todoRepo.updateOne(todo.id, listId, {
+        position: pos,
+      });
+      pos += 1024;
+    }
   }
 
 
@@ -203,29 +226,44 @@ export class TodosService implements ITodosService {
     return { success: true};
   }
 
-  async restoreTrash(url: string): Promise<SuccessResponseDto> {
+  async restoreTrash(url: string) {
     const list = await this.ensureList.execute(url);
 
-    const trashed = await this.todoRepo.findAllByList(list.id, {
-      isEliminated: true,
-    });
+    const todos = await this.todoRepo.findAllByList(list.id);
 
-    const active = await this.todoRepo.findAllByList(list.id, {
-      isEliminated: false,
-    });
+    const active = todos
+      .filter(t => !t.isEliminated)
+      .sort((a, b) => a.position - b.position);
 
-    const GAP = 1024;
-    let lastPosition = active.length
-      ? active[active.length - 1].position
-      : 0;
+    const trashed = todos
+      .filter(t => t.isEliminated)
+      .sort((a, b) => a.position - b.position);
 
-    for (const todo of trashed) {
-      lastPosition += GAP;
+    //Movemos a posiciones temporales
+    const all = [...active, ...trashed];
 
-      await this.todoRepo.updateOne(todo.id, list.id, {
-        isEliminated: false,
-        position: lastPosition,
+    for (let i = 0; i < all.length; i++) {
+      await this.todoRepo.updateOne(all[i].id, list.id, {
+        position: -(i + 1),
       });
+    }
+
+    //Reconstruimos y posicionamos en nuevo orden final
+    let pos = 1024;
+
+    for (const t of active) {
+      await this.todoRepo.updateOne(t.id, list.id, {
+        position: pos,
+      });
+      pos += 1024;
+    }
+
+    for (const t of trashed) {
+      await this.todoRepo.updateOne(t.id, list.id, {
+        isEliminated: false,
+        position: pos,
+      });
+      pos += 1024;
     }
 
     return { success: true };
