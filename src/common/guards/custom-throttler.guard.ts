@@ -12,7 +12,6 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     const listUrl = req.params?.url;
 
     const tracker = listUrl ? `${listUrl}-${ip}` : `create-${ip}`;
-    console.log(`[Throttle tracker]: ${tracker}`);
     return tracker;
   }
 }
