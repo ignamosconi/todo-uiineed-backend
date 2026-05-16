@@ -13,6 +13,14 @@ export class ListsController {
     @Inject('IListsService') private readonly listsService: IListsService
   ) {}
 
+  @Get('/health')
+  healthCheck() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Post()
   @Throttle({ default: { limit: 15, ttl: 60000 } }) 
   async create(): Promise<CreateListResponseDto> {
